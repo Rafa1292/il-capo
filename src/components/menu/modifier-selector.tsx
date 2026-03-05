@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Minus, Plus } from "lucide-react";
 import type { MenuItem, CartModifierGroup, CartModifierElement } from "@/types";
@@ -77,13 +77,13 @@ export function ModifierSelector({ item, open, onClose, onConfirm }: Props) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{item.name}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={(o) => !o && handleClose()}>
+      <SheetContent side="bottom" className="rounded-t-2xl flex flex-col max-h-[88vh] p-0">
+        <SheetHeader className="px-5 pt-5 pb-3 border-b border-border shrink-0">
+          <SheetTitle className="text-base">{item.name}</SheetTitle>
+        </SheetHeader>
 
-        <div className="space-y-6 py-2">
+        <div className="space-y-6 py-4 px-5 overflow-y-auto flex-1">
           {item.modifierGroups.map((group) => {
             const groupTotal = Object.values(selected[group.modifierGroupId] ?? {}).reduce(
               (s, v) => s + v,
@@ -167,19 +167,19 @@ export function ModifierSelector({ item, open, onClose, onConfirm }: Props) {
           })}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+        <SheetFooter className="px-5 py-4 border-t border-border shrink-0 flex-row gap-2">
+          <Button variant="outline" className="flex-1" onClick={handleClose}>
             Cancelar
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={!isValid()}
-            className="bg-primary text-primary-foreground"
+            className="flex-1 bg-primary text-primary-foreground"
           >
             Agregar al carrito
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

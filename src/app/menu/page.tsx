@@ -1,11 +1,12 @@
 import { nicoGet } from "@/lib/nico";
 import { MenuItemCard } from "@/components/menu/menu-item-card";
+import { CategoryNav } from "@/components/menu/category-nav";
 import type { MenuCategory } from "@/types";
 
 async function getMenu(): Promise<MenuCategory[]> {
   try {
-    const json = await nicoGet<{ data: { categories: MenuCategory[] } }>("/api/public/menu");
-    return json.data.categories ?? [];
+    const json = await nicoGet<{ data: MenuCategory[] }>("/api/public/menu");
+    return json.data ?? [];
   } catch {
     return [];
   }
@@ -30,26 +31,23 @@ export default async function MenuPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Nuestro menú</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Agrega productos al carrito y procede al checkout
-        </p>
-      </div>
+    <div>
+      <CategoryNav categories={categories} />
 
-      {categories.map((category) => (
-        <section key={category.id}>
-          <h2 className="text-lg font-bold mb-1 pb-2 border-b border-primary/30">
-            {category.name}
-          </h2>
-          <div>
-            {category.items.map((item) => (
-              <MenuItemCard key={item.id} item={item} />
-            ))}
-          </div>
-        </section>
-      ))}
+      <div className="space-y-8 mt-4">
+        {categories.map((category) => (
+          <section key={category.id} id={`cat-${category.id}`}>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2 pb-2 border-b border-border">
+              {category.name}
+            </h2>
+            <div>
+              {category.items.map((item) => (
+                <MenuItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

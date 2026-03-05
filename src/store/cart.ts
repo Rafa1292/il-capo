@@ -17,6 +17,7 @@ interface CartStore {
   customerPhone: string;
   deliveryAddress: string;
   notes: string;
+  cartOpen: boolean;
 
   addItem: (item: Omit<CartItem, "cartId">) => void;
   removeItem: (cartId: string) => void;
@@ -26,6 +27,7 @@ interface CartStore {
   setCustomerInfo: (data: { name: string; phone: string }) => void;
   setDeliveryAddress: (address: string) => void;
   setNotes: (notes: string) => void;
+  setCartOpen: (open: boolean) => void;
 
   total: () => number;
   count: () => number;
@@ -40,6 +42,7 @@ export const useCartStore = create<CartStore>()(
       customerPhone: "",
       deliveryAddress: "",
       notes: "",
+      cartOpen: false,
 
       addItem: (item) =>
         set((s) => ({
@@ -75,11 +78,22 @@ export const useCartStore = create<CartStore>()(
         set({ customerName: name, customerPhone: phone }),
       setDeliveryAddress: (deliveryAddress) => set({ deliveryAddress }),
       setNotes: (notes) => set({ notes }),
+      setCartOpen: (cartOpen) => set({ cartOpen }),
 
       total: () => get().items.reduce((sum, i) => sum + itemTotal(i), 0),
       count: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
     }),
-    { name: "il-capo-cart" }
+    {
+      name: "il-capo-cart",
+      partialize: (state) => ({
+        items: state.items,
+        deliveryMethod: state.deliveryMethod,
+        customerName: state.customerName,
+        customerPhone: state.customerPhone,
+        deliveryAddress: state.deliveryAddress,
+        notes: state.notes,
+      }),
+    }
   )
 );
 
