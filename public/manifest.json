@@ -1,0 +1,19 @@
+{
+  "name": "il Capo Pizzería",
+  "short_name": "il Capo",
+  "description": "Ordena las mejores pizzas a domicilio o para recoger",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#CC0000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "shopping"]
+}

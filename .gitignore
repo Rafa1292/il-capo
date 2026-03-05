@@ -36,6 +36,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# PWA generated files (built at deploy time)
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+public/workbox-*.js
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
