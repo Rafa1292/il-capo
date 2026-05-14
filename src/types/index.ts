@@ -28,6 +28,71 @@ export interface MenuCategory {
   items: MenuItem[];
 }
 
+// Pizza Builder types
+export interface PizzaBuilderSize {
+  id: string;
+  name: string;
+  basePrice: number;
+  maxToppingsPerHalf: number;
+  sortOrder: number;
+  imageUrl: string | null;
+}
+
+export interface PizzaBuilderDough {
+  id: string;
+  name: string;
+  extraPrice: number;
+  sortOrder: number;
+  imageUrl: string | null;
+}
+
+export interface PizzaBuilderSauce {
+  id: string;
+  name: string;
+  extraPrice: number;
+  isDefault: boolean;
+  sortOrder: number;
+  imageUrl: string | null;
+}
+
+export interface PizzaBuilderTopping {
+  id: string;
+  name: string;
+  unitType: "GRAMS" | "UNITS";
+  pricePerUnit: number;
+  maxPortions: number;
+  emoji: string | null;
+  imageUrl: string | null;
+  sortOrder: number;
+  portionsBySize: { sizeId: string; unitsPerPortion: number; unitsPerHalf: number }[];
+}
+
+export interface PizzaBuilderToppingGroup {
+  id: string;
+  name: string;
+  maxPerHalf: number | null;
+  sortOrder: number;
+  toppings: PizzaBuilderTopping[];
+}
+
+export interface PizzaBuilderData {
+  config: { halvesEnabled: boolean; saleItemId: string | null };
+  sizes: PizzaBuilderSize[];
+  doughs: PizzaBuilderDough[];
+  sauces: PizzaBuilderSauce[];
+  toppingGroups: PizzaBuilderToppingGroup[];
+}
+
+export interface PizzaBuilderCartSelection {
+  sizeId: string;
+  doughId: string;
+  sauceId: string;
+  isHalf: boolean;
+  toppings?: { toppingId: string; portions: number }[];
+  leftToppings?: { toppingId: string; portions: number }[];
+  rightToppings?: { toppingId: string; portions: number }[];
+}
+
 // Cart types
 export interface CartModifierElement {
   modifierElementId: string;
@@ -53,6 +118,7 @@ export interface CartItem {
   quantity: number;
   unitPrice: number;
   modifiers: CartModifierGroup[];
+  pizzaBuilder?: PizzaBuilderCartSelection;
 }
 
 export type DeliveryMethod = "TAKEOUT" | "DELIVERY";

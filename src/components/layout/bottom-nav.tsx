@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Pizza, User } from "lucide-react";
+import { Pizza, User, Factory } from "lucide-react";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +16,7 @@ export function BottomNav() {
 
   const isHome = pathname === "/";
   const isMenu = pathname.startsWith("/menu");
+  const isFactory = pathname.startsWith("/factory");
   const isLogin = pathname.startsWith("/login");
 
   return (
@@ -65,19 +66,27 @@ export function BottomNav() {
           {/* Items left + right con espacio en el centro para el logo */}
           <div className="grid grid-cols-2 h-full">
 
-            {/* Izquierda — Menú */}
-            <div className="flex items-center">
+            {/* Izquierda — Menú + Factory */}
+            <div className="flex items-center gap-1">
               <Link
                 href="/menu"
                 className={cn(
-                  "flex flex-col items-center gap-0.5 px-4 py-2 transition-colors text-xs",
-                  isMenu
-                    ? "text-primary"
-                    : "text-foreground/50 hover:text-foreground"
+                  "flex flex-col items-center gap-0.5 px-3 py-2 transition-colors text-xs",
+                  isMenu ? "text-primary" : "text-foreground/50 hover:text-foreground"
                 )}
               >
                 <Pizza className="h-5 w-5" />
                 Menú
+              </Link>
+              <Link
+                href="/factory"
+                className={cn(
+                  "flex flex-col items-center gap-0.5 px-3 py-2 transition-colors text-xs",
+                  isFactory ? "text-primary" : "text-foreground/50 hover:text-foreground"
+                )}
+              >
+                <Factory className="h-5 w-5" />
+                Factory
               </Link>
             </div>
 

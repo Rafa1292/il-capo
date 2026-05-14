@@ -83,6 +83,7 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           modifiers: item.modifiers.length > 0 ? item.modifiers : undefined,
+          pizzaBuilder: item.pizzaBuilder,
         })),
         estimatedTotal: cartTotal,
       };
