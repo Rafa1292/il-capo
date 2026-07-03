@@ -1,3 +1,7 @@
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver
+# Decide per-dependency whether its install/build scripts may run.
+#   true  -> build script runs (native compilation)
+#   false -> build script is skipped
+allowBuilds:
+  sharp: true
+  msw: false
+  unrs-resolver: false
