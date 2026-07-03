@@ -49,17 +49,19 @@ export function BottomNav() {
 
           {/* Logo bump — sale por encima del navbar */}
           <div className="absolute left-1/2 -translate-x-1/2 -top-6 z-10">
-            <Link href="/">
-              <div className="h-20 w-20 rounded-full overflow-hidden flex items-center justify-center bg-white border border-zinc-200 shadow-md transition-transform active:scale-95">
-                <Image
-                  src="/logo.png"
-                  alt="il Capo"
-                  width={68}
-                  height={68}
-                  className="object-contain"
-                  priority
-                />
-              </div>
+            <Link
+              href="/"
+              aria-label="Inicio"
+              className="group block transition-transform duration-200 ease-out hover:-translate-y-1 hover:scale-105 active:scale-95"
+            >
+              <Image
+                src="/logo-home.png"
+                alt="il Capo"
+                width={104}
+                height={88}
+                className="object-contain drop-shadow-md transition-[filter,drop-shadow] duration-200 group-hover:drop-shadow-xl group-hover:brightness-105"
+                priority
+              />
             </Link>
           </div>
 
