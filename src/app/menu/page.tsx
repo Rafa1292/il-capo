@@ -34,15 +34,21 @@ export default async function MenuPage() {
     <div>
       <CategoryNav categories={categories} />
 
-      <div className="space-y-8 mt-4">
+      <div className="space-y-7 mt-4">
         {categories.map((category) => (
           <section key={category.id} id={`cat-${category.id}`}>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2 pb-2 border-b border-border">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 pb-2 border-b border-border">
               {category.name}
             </h2>
-            <div>
+            {/* Carrusel horizontal — categorías cortas (≤4 ítems) */}
+            <div
+              className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1"
+              style={{ scrollbarWidth: "none" }}
+            >
               {category.items.map((item) => (
-                <MenuItemCard key={item.id} item={item} />
+                <div key={item.id} className="w-72 shrink-0 snap-start">
+                  <MenuItemCard item={item} />
+                </div>
               ))}
             </div>
           </section>

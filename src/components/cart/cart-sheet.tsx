@@ -24,6 +24,8 @@ export function CartSheet() {
   }, []);
 
   const active = !isMobile && cartOpen;
+  // Evita mismatch de hidratación: el carrito persistido solo se refleja tras montar
+  const displayCount = mounted ? cartCount : 0;
 
   const triggerClass = cn(
     "flex flex-col items-center gap-0.5 px-2.5 py-2 transition-colors text-xs",
@@ -34,9 +36,9 @@ export function CartSheet() {
     <>
       <span className="relative">
         <ShoppingBag className="h-5 w-5" />
-        {cartCount > 0 && (
+        {displayCount > 0 && (
           <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold tabular-nums text-white">
-            {cartCount}
+            {displayCount}
           </span>
         )}
       </span>

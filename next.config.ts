@@ -11,6 +11,12 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  images: {
+    // Permite imágenes remotas de los sale items (ajustar hostname al real cuando se sepa)
+    remotePatterns: [
+      { protocol: "https", hostname: "**" },
+    ],
+  },
 };
 
 export default withPWA(nextConfig);

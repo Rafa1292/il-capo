@@ -68,10 +68,10 @@ export function CategoryNav({ categories }: Props) {
   }
 
   return (
-    <div className="sticky top-0 z-40 -mx-4 bg-background border-b border-border">
+    <div className="sticky top-0 z-40 -mx-4 bg-background/90 backdrop-blur-sm border-b border-border">
       <div
         ref={navRef}
-        className="flex overflow-x-auto px-4"
+        className="flex gap-2 overflow-x-auto px-4 py-3"
         style={{ scrollbarWidth: "none" }}
       >
         {categories.map((cat) => (
@@ -79,10 +79,10 @@ export function CategoryNav({ categories }: Props) {
             key={cat.id}
             data-cat={cat.id}
             onClick={() => scrollToCategory(cat.id)}
-            className={`shrink-0 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide border-b-2 transition-colors whitespace-nowrap ${
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
               active === cat.id
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground"
             }`}
           >
             {cat.name}
