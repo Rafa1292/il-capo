@@ -79,7 +79,7 @@ export function CategoryNav({ categories }: Props) {
             key={cat.id}
             data-cat={cat.id}
             onClick={() => scrollToCategory(cat.id)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
               active === cat.id
                 ? "bg-primary text-white shadow-sm"
                 : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground"
