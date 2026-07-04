@@ -34,15 +34,6 @@ export function BottomNav() {
         </svg>
       </a>}
 
-      {/* Usuario — esquina superior derecha */}
-      <Link
-        href="/login"
-        className="fixed top-4 right-4 z-50 h-9 w-9 rounded-full text-white flex items-center justify-center transition-transform active:scale-95 bg-linear-to-b from-[#e83333] to-primary ring-2 ring-white/80 ring-offset-1 ring-offset-primary shadow-md"
-        aria-label="Iniciar sesión"
-      >
-        <User className="h-4 w-4" />
-      </Link>
-
       {/* Bottom nav */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-background border-t border-border">
         <div className="relative max-w-2xl mx-auto h-16 px-6">
@@ -73,7 +64,7 @@ export function BottomNav() {
               <Link
                 href="/menu"
                 className={cn(
-                  "flex flex-col items-center gap-0.5 px-3 py-2 transition-colors text-xs",
+                  "flex flex-col items-center gap-0.5 px-2.5 py-2 transition-colors text-xs",
                   isMenu ? "text-primary" : "text-foreground/50 hover:text-foreground"
                 )}
               >
@@ -83,7 +74,7 @@ export function BottomNav() {
               <Link
                 href="/factory"
                 className={cn(
-                  "flex flex-col items-center gap-0.5 px-3 py-2 transition-colors text-xs",
+                  "flex flex-col items-center gap-0.5 px-2.5 py-2 transition-colors text-xs",
                   isFactory ? "text-primary" : "text-foreground/50 hover:text-foreground"
                 )}
               >
@@ -92,12 +83,19 @@ export function BottomNav() {
               </Link>
             </div>
 
-            {/* Derecha — Carrito */}
-            <div className="flex items-center justify-end">
-              <div className="flex flex-col items-center gap-0.5 px-4 py-2 text-foreground/50 hover:text-foreground transition-colors text-xs">
-                <CartSheet />
-                <span className="text-[10px]">Carrito</span>
-              </div>
+            {/* Derecha — Carrito + Cuenta */}
+            <div className="flex items-center justify-end gap-1">
+              <CartSheet />
+              <Link
+                href="/login"
+                className={cn(
+                  "flex flex-col items-center gap-0.5 px-2.5 py-2 transition-colors text-xs",
+                  isLogin ? "text-primary" : "text-foreground/50 hover:text-foreground"
+                )}
+              >
+                <User className="h-5 w-5" />
+                Cuenta
+              </Link>
             </div>
 
           </div>

@@ -23,29 +23,31 @@ export function CartSheet() {
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  const active = !isMobile && cartOpen;
+
+  const triggerClass = cn(
+    "flex flex-col items-center gap-0.5 px-2.5 py-2 transition-colors text-xs",
+    active ? "text-primary" : "text-foreground/50 hover:text-foreground"
+  );
+
   const triggerContent = (
     <>
-      <ShoppingBag
-        className={cn(
-          "h-4 w-4 transition-colors",
-          !isMobile && cartOpen
-            ? "text-foreground"
-            : "text-foreground/50 group-hover:text-foreground"
+      <span className="relative">
+        <ShoppingBag className="h-5 w-5" />
+        {cartCount > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold tabular-nums text-white">
+            {cartCount}
+          </span>
         )}
-      />
-      {cartCount > 0 && (
-        <span className="text-xs font-semibold text-foreground tabular-nums">{cartCount}</span>
-      )}
+      </span>
+      Carrito
     </>
   );
 
   // Desktop: button toggles sidebar in store — no modal
   if (mounted && !isMobile) {
     return (
-      <button
-        onClick={() => setCartOpen(!cartOpen)}
-        className="relative flex items-center gap-1.5 px-2.5 py-1.5 transition-colors group"
-      >
+      <button onClick={() => setCartOpen(!cartOpen)} className={triggerClass}>
         {triggerContent}
       </button>
     );
@@ -55,9 +57,7 @@ export function CartSheet() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <button className="relative flex items-center gap-1.5 px-2.5 py-1.5 transition-colors group">
-          {triggerContent}
-        </button>
+        <button className={triggerClass}>{triggerContent}</button>
       </SheetTrigger>
       <SheetContent
         side="bottom"
