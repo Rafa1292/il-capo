@@ -17,7 +17,7 @@ export function BottomNav() {
   const isHome = pathname === "/";
   const isMenu = pathname.startsWith("/menu");
   const isFactory = pathname.startsWith("/factory");
-  const isLogin = pathname.startsWith("/login");
+  const isLogin = pathname.startsWith("/cuenta");
 
   return (
     <>
@@ -90,7 +90,7 @@ export function BottomNav() {
             <div className="flex flex-1 items-center justify-end gap-1">
               <CartSheet />
               <Link
-                href="/login"
+                href="/cuenta"
                 className={cn(
                   "flex flex-col items-center gap-0.5 px-2.5 py-2 transition-colors text-xs",
                   isLogin ? "text-primary" : "text-foreground/50 hover:text-foreground"

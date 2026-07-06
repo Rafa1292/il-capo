@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { ActiveOrderBanner } from "@/components/layout/active-order-banner";
 import { CartPanel } from "@/components/cart/cart-panel";
 import { useCartStore } from "@/store/cart";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         <main className="max-w-2xl mx-auto px-4 pt-4 pb-24 min-h-full">
           {children}
         </main>
+        <ActiveOrderBanner />
         <BottomNav />
       </div>
 

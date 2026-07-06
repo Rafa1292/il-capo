@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { UtensilsCrossed, Bike, ShoppingCart } from "lucide-react";
+import { UtensilsCrossed, Bike, ShoppingCart, MapPin } from "lucide-react";
 import { useCartStore, itemTotal } from "@/store/cart";
+import { useProfileStore } from "@/store/profile";
 import Link from "next/link";
 
 export default function CheckoutPage() {
@@ -32,6 +33,16 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState(deliveryAddress);
   const [orderNotes, setOrderNotes] = useState(notes);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const savedAddresses = useProfileStore((s) => s.addresses);
+
+  // Pre-llenar desde el perfil guardado (cuenta local) lo que esté vacío.
+  useEffect(() => {
+    const p = useProfileStore.getState();
+    setName((v) => v || p.name);
+    setPhone((v) => v || p.phone);
+    setEmail((v) => v || p.email);
+  }, []);
 
   const cartTotal = total();
 
@@ -75,6 +86,12 @@ export default function CheckoutPage() {
       setCustomerInfo({ name: name.trim(), phone: phone.trim() });
       setDeliveryAddress(address.trim());
       setNotes(orderNotes.trim());
+
+      // Guardamos también en el perfil del dispositivo: el próximo pedido
+      // arranca con todo pre-llenado.
+      const profile = useProfileStore.getState();
+      profile.setProfile({ name: name.trim(), phone: phone.trim(), email: email.trim() });
+      if (deliveryMethod === "DELIVERY") profile.rememberAddress(address);
 
       const res = await fetch("/api/payments/create", {
         method: "POST",
@@ -201,6 +218,21 @@ export default function CheckoutPage() {
           {deliveryMethod === "DELIVERY" && (
             <div className="space-y-1.5">
               <Label htmlFor="address">Dirección de entrega *</Label>
+              {savedAddresses.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pb-1">
+                  {savedAddresses.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAddress(a.address)}
+                      className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs hover:border-primary/50 hover:text-primary transition-colors"
+                    >
+                      <MapPin className="h-3 w-3" />
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               <Textarea
                 id="address"
                 placeholder="Calle, número, barrio, referencias..."

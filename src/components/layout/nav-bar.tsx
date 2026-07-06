@@ -24,10 +24,10 @@ export function NavBar() {
         Menú
       </Link>
       <Link
-        href="/login"
+        href="/cuenta"
         className={cn(
           "p-2 rounded-md transition-colors",
-          pathname.startsWith("/login")
+          pathname.startsWith("/cuenta")
             ? "text-primary bg-primary/8"
             : "text-foreground/60 hover:text-foreground hover:bg-muted"
         )}
