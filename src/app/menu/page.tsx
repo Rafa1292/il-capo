@@ -3,13 +3,12 @@ import { MenuItemCard } from "@/components/menu/menu-item-card";
 import { CategoryNav } from "@/components/menu/category-nav";
 import type { MenuCategory } from "@/types";
 
+// ⚠️ No atrapar errores aquí: con ISR, si la revalidación falla Next sigue
+// sirviendo la última versión buena del menú. Atrapar y devolver [] cachearía
+// "menú no disponible" 60s para todos aunque nico vuelva en segundos.
 async function getMenu(): Promise<MenuCategory[]> {
-  try {
-    const json = await nicoGet<{ data: MenuCategory[] }>("/api/public/menu");
-    return json.data ?? [];
-  } catch {
-    return [];
-  }
+  const json = await nicoGet<{ data: MenuCategory[] }>("/api/public/menu");
+  return json.data ?? [];
 }
 
 export const revalidate = 60;

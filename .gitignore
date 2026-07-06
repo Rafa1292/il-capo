@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# notas locales con datos de tarjetas de prueba — nunca commitear
+Visa MasterCard American Express.txt
+
 # vercel
 .vercel
 

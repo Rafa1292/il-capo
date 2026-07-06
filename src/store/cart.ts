@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem, CartModifierGroup, DeliveryMethod } from "@/types";
 
+// Contador para garantizar cartId únicos aunque se agreguen varias líneas en el mismo ms
+let cartSeq = 0;
+
 function itemTotal(item: CartItem): number {
   const modifierSum = item.modifiers.reduce(
     (sum, g) => sum + g.elements.reduce((s, e) => s + e.price * e.quantity, 0),
@@ -48,7 +51,7 @@ export const useCartStore = create<CartStore>()(
         set((s) => ({
           items: [
             ...s.items,
-            { ...item, cartId: `${item.saleItemId}-${Date.now()}` },
+            { ...item, cartId: `${item.saleItemId}-${Date.now()}-${cartSeq++}` },
           ],
         })),
 

@@ -8,9 +8,8 @@ export async function GET() {
     const data = await nicoGet("/api/public/menu");
     return NextResponse.json(data);
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error al cargar el menú" },
-      { status: 500 }
-    );
+    console.error("[api/menu]", err);
+    // Mensaje genérico: no filtramos detalles internos (URLs, errores de nico).
+    return NextResponse.json({ error: "Error al cargar el menú" }, { status: 500 });
   }
 }

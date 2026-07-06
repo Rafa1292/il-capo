@@ -29,7 +29,19 @@ export function CartPanel() {
                 <p className="text-sm font-medium leading-tight">{item.description}</p>
                 {item.modifiers.flatMap((g) => g.elements).length > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {item.modifiers.flatMap((g) => g.elements.map((e) => e.name)).join(", ")}
+                    {item.modifiers
+                      .map((g) => {
+                        const normal = g.elements
+                          .filter((e) => !e.isCombined)
+                          .map((e) => (e.quantity > 1 ? `${e.quantity}× ` : "") + e.name.trim());
+                        const combined = g.elements
+                          .filter((e) => e.isCombined)
+                          .map((e) => e.name.trim());
+                        const base = normal.join(", ");
+                        return combined.length ? `${base} / ${combined.join(" / ")}` : base;
+                      })
+                      .filter(Boolean)
+                      .join(", ")}
                   </p>
                 )}
                 <p className="text-sm font-semibold text-primary">

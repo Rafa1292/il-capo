@@ -12,10 +12,27 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   reactCompiler: true,
   images: {
-    // Permite imágenes remotas de los sale items (ajustar hostname al real cuando se sepa)
+    // Solo los hosts reales de imágenes (nico sube a Cloudinary). Un wildcard "**"
+    // dejaría usar nuestro optimizador de imágenes como proxy de cualquier host.
     remotePatterns: [
-      { protocol: "https", hostname: "**" },
+      { protocol: "https", hostname: "res.cloudinary.com" },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          // Nadie debería embeber la app en un iframe (clickjacking sobre el checkout).
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // Los links de pedido llevan token en la URL: no filtrarlos como referrer ya
+          // lo cubre la política anterior (solo origin cross-origin).
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
   },
 };
 

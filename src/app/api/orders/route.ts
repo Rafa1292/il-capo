@@ -1,15 +1,200 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nicoPost } from "@/lib/nico";
+import { getCatalog } from "@/lib/catalog";
+import {
+  buildMenuIndex,
+  priceItemBase,
+  priceItemModifiers,
+  authoritativeElementPrice,
+  assertQuantity,
+  MAX_CART_LINES,
+  MAX_LINE_QUANTITY,
+  PricingError,
+  type PriceableItem,
+} from "@/lib/pricing";
+import { consultPayment, TILOPAY_CURRENCY } from "@/lib/tilopay";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { signOrderId } from "@/lib/order-token";
+import type { PizzaBuilderCartSelection } from "@/types";
 
+// Idempotencia best-effort dentro del proceso. La dedupe autoritativa (persistente)
+// debe vivir en nico: rechazar/ignorar una segunda orden con el mismo orderNumber.
+const inFlight = new Set<string>();
+
+interface IncomingElement {
+  modifierElementId: string;
+  name?: string;
+  price?: number; // ← se IGNORA: el precio se recalcula en el servidor
+  quantity: number;
+  isCombined?: boolean;
+}
+interface IncomingGroup {
+  modifierGroupId: string;
+  name?: string;
+  minSelect?: number;
+  maxSelect?: number;
+  showLabel?: boolean;
+  sortOrder?: number;
+  elements: IncomingElement[];
+}
+interface IncomingItem {
+  saleItemId: string;
+  description?: string;
+  quantity: number;
+  modifiers?: IncomingGroup[];
+  pizzaBuilder?: PizzaBuilderCartSelection;
+}
+interface ConfirmBody {
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  deliveryMethod: "TAKEOUT" | "DELIVERY";
+  deliveryAddress?: string;
+  notes?: string;
+  items: IncomingItem[];
+}
+
+function centsEqual(a: number, b: number): boolean {
+  return Math.round(a * 100) === Math.round(b * 100);
+}
+
+/** Trunca strings del cliente a un largo razonable antes de reenviarlos al POS. */
+function clip(s: string | undefined, max: number): string | undefined {
+  const t = s?.trim();
+  return t ? t.slice(0, max) : undefined;
+}
+
+// Crea el pedido en nico SOLO tras verificar el pago en Tilopay y que el monto
+// pagado coincida con el total recalculado en el servidor con precios reales.
 export async function POST(req: NextRequest) {
+  let orderNumber = "";
   try {
-    const body = await req.json();
-    const data = await nicoPost("/api/public/orders", body);
-    return NextResponse.json(data, { status: 201 });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error al crear el pedido" },
-      { status: 500 }
+    const rl = rateLimit(`orders:${clientIp(req)}`, 15, 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Probá de nuevo en un momento." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+      );
+    }
+
+    const body = (await req.json()) as ConfirmBody;
+    orderNumber = body.orderNumber?.trim();
+
+    // ── Validaciones básicas ──
+    if (!orderNumber) {
+      return NextResponse.json({ error: "Falta la referencia de pago" }, { status: 400 });
+    }
+    if (!Array.isArray(body.items) || body.items.length === 0) {
+      return NextResponse.json({ error: "El carrito está vacío" }, { status: 400 });
+    }
+    if (body.items.length > MAX_CART_LINES) {
+      return NextResponse.json({ error: "Demasiados artículos en el carrito" }, { status: 400 });
+    }
+    if (!body.customerName?.trim() || !body.customerPhone?.trim()) {
+      return NextResponse.json({ error: "Nombre y teléfono son requeridos" }, { status: 400 });
+    }
+    if (body.deliveryMethod === "DELIVERY" && !body.deliveryAddress?.trim()) {
+      return NextResponse.json({ error: "La dirección es requerida para entregas" }, { status: 400 });
+    }
+
+    // ── Idempotencia (evita doble creación por doble submit) ──
+    if (inFlight.has(orderNumber)) {
+      return NextResponse.json({ error: "El pedido ya se está procesando" }, { status: 409 });
+    }
+    inFlight.add(orderNumber);
+
+    // ── Recalcular precios con el catálogo real y sanear los ítems ──
+    const catalog = await getCatalog();
+    const index = buildMenuIndex(catalog.categories);
+
+    let total = 0;
+    const nicoItems = body.items.map((item) => {
+      assertQuantity(item.quantity, MAX_LINE_QUANTITY, "artículos");
+
+      // unitPrice = solo la base del ítem (nico suma los modificadores por su cuenta).
+      const base = priceItemBase(item as PriceableItem, catalog, index);
+      const modSum = priceItemModifiers(item as PriceableItem, index);
+      total += (base + modSum) * item.quantity;
+
+      // Reescribimos los precios de los modificadores con los autoritativos.
+      const modifiers = (item.modifiers ?? []).map((g) => ({
+        ...g,
+        elements: g.elements.map((el) => ({
+          ...el,
+          price: authoritativeElementPrice(index, item.saleItemId, el.modifierElementId),
+        })),
+      }));
+
+      return {
+        saleItemId: item.saleItemId,
+        description: clip(item.description, 200),
+        quantity: item.quantity,
+        unitPrice: base, // ← solo base; los modificadores van aparte en modifiers[]
+        modifiers: modifiers.length > 0 ? modifiers : undefined,
+        pizzaBuilder: item.pizzaBuilder,
+      };
+    });
+
+    if (total <= 0) {
+      return NextResponse.json({ error: "Total inválido" }, { status: 400 });
+    }
+
+    // ── Verificación autoritativa del pago en Tilopay ──
+    const tx = await consultPayment(orderNumber);
+    if (!tx || tx.code !== "1") {
+      return NextResponse.json({ error: "El pago no está aprobado" }, { status: 402 });
+    }
+    if (tx.currency !== TILOPAY_CURRENCY) {
+      return NextResponse.json({ error: "Moneda del pago no coincide" }, { status: 409 });
+    }
+    // 🔒 El monto pagado DEBE coincidir con el total recalculado en el servidor.
+    if (!centsEqual(Number(tx.amount), total)) {
+      console.error(
+        `[orders] Monto no coincide orderNumber=${orderNumber} pagado=${tx.amount} total=${total}`
+      );
+      return NextResponse.json({ error: "El monto pagado no coincide con el pedido" }, { status: 409 });
+    }
+
+    // ── Crear el pedido en nico con precios autoritativos + referencia de pago ──
+    const payload = {
+      customerName: clip(body.customerName, 100),
+      customerPhone: clip(body.customerPhone, 30),
+      deliveryMethod: body.deliveryMethod,
+      deliveryAddress:
+        body.deliveryMethod === "DELIVERY" ? clip(body.deliveryAddress, 500) : undefined,
+      notes: clip(body.notes, 500),
+      items: nicoItems,
+      estimatedTotal: total,
+      payment: {
+        provider: "tilopay",
+        orderNumber,
+        auth: tx.auth,
+        amount: Number(tx.amount),
+        currency: tx.currency,
+        tilopayId: tx.id_tilopay,
+      },
+    };
+
+    const data = await nicoPost<{ success?: boolean; data?: { id?: string } }>(
+      "/api/public/orders",
+      payload
     );
+
+    // Token de acceso al pedido: solo con él se puede consultar el estado (cierra IDOR).
+    const id = data?.data?.id;
+    const accessToken = id ? signOrderId(id) : undefined;
+
+    return NextResponse.json(
+      { ...data, data: { ...data?.data, accessToken } },
+      { status: 201 }
+    );
+  } catch (err) {
+    if (err instanceof PricingError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    console.error("[orders]", err);
+    return NextResponse.json({ error: "No se pudo registrar el pedido" }, { status: 500 });
+  } finally {
+    if (orderNumber) inFlight.delete(orderNumber);
   }
 }

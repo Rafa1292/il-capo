@@ -1,7 +1,17 @@
+export interface CombinableElement {
+  modifierElementId: string;
+  name: string;
+  price: number;
+}
+
 export interface ModifierElement {
   modifierElementId: string;
   name: string;
   price: number;
+  // Combinación (mitad y mitad): si el sabor es combinable, trae las opciones de la otra mitad
+  combinable?: boolean;
+  combinableModifierGroupId?: string | null;
+  combinableGroupElements?: CombinableElement[] | null;
 }
 
 export interface ModifierGroup {
@@ -100,6 +110,7 @@ export interface CartModifierElement {
   name: string;
   price: number;
   quantity: number;
+  isCombined?: boolean; // true = es la 2ª mitad de una pizza combinada
 }
 
 export interface CartModifierGroup {

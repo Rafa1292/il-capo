@@ -36,7 +36,7 @@ export function BottomNav() {
 
       {/* Bottom nav */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-background border-t border-border">
-        <div className="relative max-w-2xl mx-auto h-16 px-6">
+        <div className="relative max-w-2xl mx-auto h-16 px-2">
 
           {/* Logo bump — sale por encima del navbar */}
           <div className="absolute left-1/2 -translate-x-1/2 -top-6 z-10">
@@ -56,11 +56,11 @@ export function BottomNav() {
             </Link>
           </div>
 
-          {/* Items left + right con espacio en el centro para el logo */}
-          <div className="grid grid-cols-2 h-full">
+          {/* Items left + right con espacio reservado en el centro para el logo */}
+          <div className="flex h-full items-center">
 
             {/* Izquierda — Menú + Factory */}
-            <div className="flex items-center gap-1">
+            <div className="flex flex-1 items-center justify-start gap-1">
               <Link
                 href="/menu"
                 className={cn(
@@ -83,8 +83,11 @@ export function BottomNav() {
               </Link>
             </div>
 
+            {/* Espacio reservado para el logo central */}
+            <div className="w-28 shrink-0" aria-hidden />
+
             {/* Derecha — Carrito + Cuenta */}
-            <div className="flex items-center justify-end gap-1">
+            <div className="flex flex-1 items-center justify-end gap-1">
               <CartSheet />
               <Link
                 href="/login"

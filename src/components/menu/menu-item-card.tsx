@@ -70,14 +70,18 @@ export function MenuItemCard({ item }: Props) {
     if (plainLine) updateQuantity(plainLine.cartId, plainLine.quantity - 1); // 0 → elimina
   }
 
-  function handleModifierConfirm(modifiers: CartModifierGroup[]) {
-    addItem({
-      saleItemId: item.id,
-      description: item.name,
-      quantity: 1,
-      unitPrice: item.price,
-      modifiers,
-    });
+  function handleModifierConfirm(
+    lines: { modifiers: CartModifierGroup[]; quantity: number }[]
+  ) {
+    for (const line of lines) {
+      addItem({
+        saleItemId: item.id,
+        description: item.name,
+        quantity: line.quantity,
+        unitPrice: item.price,
+        modifiers: line.modifiers,
+      });
+    }
   }
 
   const action = (

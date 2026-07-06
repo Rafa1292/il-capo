@@ -7,6 +7,8 @@ export async function GET() {
     const json = await nicoGet<{ data: PizzaBuilderData }>("/api/public/pizza-builder");
     return NextResponse.json(json.data);
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    console.error("[api/pizza-builder]", e);
+    // Mensaje genérico: no filtramos detalles internos (URLs, errores de nico).
+    return NextResponse.json({ error: "Error al cargar el pizza builder" }, { status: 500 });
   }
 }

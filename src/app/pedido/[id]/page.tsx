@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, Clock, Bike, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -67,21 +67,31 @@ function StatusDisplay({ order }: { order: OrderStatus }) {
   return null;
 }
 
-export default function OrderStatusPage() {
+function OrderStatusContent() {
   const { id } = useParams<{ id: string }>();
   const [order, setOrder] = useState<OrderStatus | null>(null);
   const [error, setError] = useState(false);
+  // Token de acceso al pedido (viene en la URL: /pedido/[id]?t=...).
+  // Usamos useSearchParams (reactivo) en vez de window.location.search: tras un
+  // router.replace (soft-nav), window.location puede no reflejar aún el query
+  // string en el primer render y el token saldría null → fetch sin ?t= → 403.
+  const searchParams = useSearchParams();
+  const token = searchParams.get("t");
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch(`/api/orders/${id}`);
+      const q = token ? `?t=${encodeURIComponent(token)}` : "";
+      const res = await fetch(`/api/orders/${id}${q}`);
       if (!res.ok) { setError(true); return; }
       const json = await res.json();
       setOrder(json.data);
+      // Un error transitorio (red móvil, nico reiniciando) no debe dejar la
+      // pantalla clavada en error: al primer fetch exitoso nos recuperamos.
+      setError(false);
     } catch {
       setError(true);
     }
-  }, [id]);
+  }, [id, token]);
 
   useEffect(() => {
     fetchStatus();
@@ -138,5 +148,20 @@ export default function OrderStatusPage() {
         </Link>
       )}
     </div>
+  );
+}
+
+export default function OrderStatusPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center gap-4 py-20 text-center">
+          <Clock className="h-16 w-16 text-muted-foreground animate-pulse" />
+          <p className="text-muted-foreground">Cargando estado...</p>
+        </div>
+      }
+    >
+      <OrderStatusContent />
+    </Suspense>
   );
 }

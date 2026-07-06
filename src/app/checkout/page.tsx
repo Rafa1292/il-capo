@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +12,6 @@ import { useCartStore, itemTotal } from "@/store/cart";
 import Link from "next/link";
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const {
     items,
     total,
@@ -26,11 +24,11 @@ export default function CheckoutPage() {
     setCustomerInfo,
     setDeliveryAddress,
     setNotes,
-    clearCart,
   } = useCartStore();
 
   const [name, setName] = useState(customerName);
   const [phone, setPhone] = useState(customerPhone);
+  const [email, setEmail] = useState("");
   const [address, setAddress] = useState(deliveryAddress);
   const [orderNotes, setOrderNotes] = useState(notes);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,6 +57,10 @@ export default function CheckoutPage() {
       toast.error("Nombre y teléfono son requeridos");
       return;
     }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Ingresa un correo válido para el comprobante de pago");
+      return;
+    }
     if (deliveryMethod === "DELIVERY" && !address.trim()) {
       toast.error("La dirección es requerida para entregas a domicilio");
       return;
@@ -67,45 +69,50 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
+      // Persistimos los datos del cliente en el store: la página de retorno los
+      // usa para crear el pedido en nico DESPUÉS de que el pago sea aprobado.
+      // El carrito NO se limpia aquí; se limpia al confirmarse el pago.
       setCustomerInfo({ name: name.trim(), phone: phone.trim() });
       setDeliveryAddress(address.trim());
       setNotes(orderNotes.trim());
 
-      const payload = {
-        customerName: name.trim(),
-        customerPhone: phone.trim(),
-        deliveryMethod,
-        deliveryAddress: deliveryMethod === "DELIVERY" ? address.trim() : undefined,
-        notes: orderNotes.trim() || undefined,
-        items: items.map((item) => ({
-          saleItemId: item.saleItemId,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          modifiers: item.modifiers.length > 0 ? item.modifiers : undefined,
-          pizzaBuilder: item.pizzaBuilder,
-        })),
-        estimatedTotal: cartTotal,
-      };
-
-      const res = await fetch("/api/orders", {
+      const res = await fetch("/api/payments/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          // El servidor recalcula el total con precios reales; no mandamos monto.
+          items: items.map((i) => ({
+            saleItemId: i.saleItemId,
+            quantity: i.quantity,
+            modifiers: i.modifiers,
+            pizzaBuilder: i.pizzaBuilder,
+          })),
+          customerName: name.trim(),
+          customerPhone: phone.trim(),
+          customerEmail: email.trim(),
+          // El servidor compara este total (el que ve el cliente) con el recalculado:
+          // si un precio cambió, frena en vez de cobrar un monto distinto al mostrado.
+          expectedTotal: cartTotal,
+        }),
       });
 
       const json = await res.json();
 
-      if (!res.ok) {
-        toast.error(json.error ?? "Error al enviar el pedido");
+      if (res.status === 409 && json.code === "PRICES_CHANGED") {
+        toast.error(json.error, { duration: 8000 });
+        setIsSubmitting(false);
+        return;
+      }
+      if (!res.ok || !json.url) {
+        toast.error(json.error ?? "No se pudo iniciar el pago");
+        setIsSubmitting(false);
         return;
       }
 
-      clearCart();
-      router.push(`/pedido/${json.data.id}`);
+      // Redirigimos al formulario de pago de Tilopay.
+      window.location.href = json.url;
     } catch {
       toast.error("Error de conexión. Intenta nuevamente.");
-    } finally {
       setIsSubmitting(false);
     }
   }
@@ -177,6 +184,20 @@ export default function CheckoutPage() {
               required
             />
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Correo *</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="tu@correo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Para enviarte el comprobante de pago.
+            </p>
+          </div>
           {deliveryMethod === "DELIVERY" && (
             <div className="space-y-1.5">
               <Label htmlFor="address">Dirección de entrega *</Label>
@@ -230,7 +251,9 @@ export default function CheckoutPage() {
         className="w-full h-12 text-base bg-primary hover:bg-primary/90"
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Enviando pedido..." : "Confirmar pedido"}
+        {isSubmitting
+          ? "Redirigiendo al pago..."
+          : `Pagar ₡${cartTotal.toLocaleString("es-CR")}`}
       </Button>
     </form>
   );
