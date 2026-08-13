@@ -3,6 +3,7 @@ import { createPayment, TILOPAY_CURRENCY } from "@/lib/tilopay";
 import { getCatalog } from "@/lib/catalog";
 import { priceCart, PricingError, type PriceableItem } from "@/lib/pricing";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { requireLocation } from "@/lib/api-location";
 import { resolveDeliveryFee, OutOfRangeError } from "@/lib/delivery";
 
 interface CreateBody {
@@ -57,9 +58,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sede: define el catálogo, los precios y las zonas de entrega. Sin ella
+    // no hay a quién preguntarle.
+    const { location: sede, response } = await requireLocation();
+    if (response) return response;
+
     // 🔒 Monto autoritativo: se recalcula en el servidor con precios reales de nico.
     // NUNCA se confía en un monto enviado por el cliente.
-    const catalog = await getCatalog();
+    const catalog = await getCatalog(sede);
     let total: number;
     try {
       total = priceCart(body.items, catalog).total;
@@ -79,7 +85,8 @@ export async function POST(req: NextRequest) {
     try {
       deliveryFee = await resolveDeliveryFee(
         body.deliveryMethod ?? "TAKEOUT",
-        body.deliveryLocation ?? null
+        body.deliveryLocation ?? null,
+        sede
       );
     } catch (e) {
       if (e instanceof OutOfRangeError) {

@@ -1,96 +1,33 @@
-import Image from "next/image";
-import { nicoGet, isBuildPrerender } from "@/lib/nico";
-import { MenuItemCard } from "@/components/menu/menu-item-card";
-import { CategoryNav } from "@/components/menu/category-nav";
-import { OpeningStatus } from "@/components/menu/opening-status";
-import { AboutFooter } from "@/components/menu/about-footer";
-import { DragScroller } from "@/components/ui/drag-scroller";
-import type { MenuCategory } from "@/types";
-
-// ⚠️ No atrapar errores en runtime: con ISR, si la revalidación falla Next sigue
-// sirviendo la última versión buena del menú. Atrapar y devolver [] cachearía
-// "menú no disponible" 60s para todos aunque nico vuelva en segundos.
-// La única excepción es el prerender del build: ver isBuildPrerender().
-async function getMenu(): Promise<MenuCategory[]> {
-  try {
-    const json = await nicoGet<{ data: MenuCategory[] }>("/api/public/menu", {
-      revalidate: 60,
-    });
-    return json.data ?? [];
-  } catch (err) {
-    if (isBuildPrerender()) return [];
-    throw err;
-  }
-}
+import { redirect } from "next/navigation";
+import { MenuView } from "@/components/menu/menu-view";
+import { LocationPickerScreen } from "@/components/menu/location-picker-screen";
+import { defaultLocation, publicLocations } from "@/lib/locations";
+import { currentLocation } from "@/lib/current-location";
 
 export const revalidate = 60;
 
-export default async function HomePage() {
-  const categories = await getMenu();
+/**
+ * La portada.
+ *
+ * Con una sola sede es la carta, igual que siempre —los QR y links viejos que
+ * apuntan a la raíz siguen funcionando—. Con varias, manda a la que el cliente
+ * ya eligió, o le pregunta.
+ */
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cambiar?: string }>;
+}) {
+  const only = defaultLocation();
+  if (only) return <MenuView location={only} />;
 
-  return (
-    <div>
-      {/* Cabecera — logo y si están abiertos ahora mismo */}
-      <div className="flex items-center justify-between gap-4 pb-6">
-        <Image
-          src="/logo.png"
-          alt="il Capo Pizzería"
-          width={56}
-          height={56}
-          className="object-contain"
-          priority
-        />
-        <OpeningStatus />
-      </div>
+  // `?cambiar=1` fuerza el selector aunque ya haya una sede recordada: si no,
+  // quien quisiera cambiarse quedaría rebotando a la que eligió la primera vez.
+  const { cambiar } = await searchParams;
+  if (!cambiar) {
+    const chosen = await currentLocation();
+    if (chosen) redirect(`/${chosen.slug}`);
+  }
 
-      {categories.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-          <p className="text-muted-foreground">El menú no está disponible en este momento.</p>
-          <p className="text-sm text-muted-foreground">Por favor intenta nuevamente más tarde.</p>
-        </div>
-      ) : (
-        <>
-          <div className="flex flex-col items-center gap-3 pb-5 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
-              Nuestra carta
-            </p>
-            <div className="flex items-center gap-3 w-40">
-              <span className="flex-1 border-t border-border" />
-              <span className="text-primary/60 text-[10px]">✦</span>
-              <span className="flex-1 border-t border-border" />
-            </div>
-          </div>
-
-          <CategoryNav categories={categories} />
-
-          <div className="space-y-8 mt-5">
-            {categories.map((category) => (
-              <section key={category.id} id={`cat-${category.id}`}>
-                {/* Divisor ornamental centrado — estilo carta italiana */}
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="h-px flex-1 bg-border" />
-                  <h2 className="flex items-center gap-2 text-base font-bold uppercase tracking-[0.15em] text-foreground">
-                    <span className="text-[9px] text-primary/70">✦</span>
-                    {category.name}
-                    <span className="text-[9px] text-primary/70">✦</span>
-                  </h2>
-                  <span className="h-px flex-1 bg-border" />
-                </div>
-                {/* Carrusel horizontal — se arrastra con el mouse en escritorio */}
-                <DragScroller className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
-                  {category.items.map((item) => (
-                    <div key={item.id} className="w-72 shrink-0 snap-start">
-                      <MenuItemCard item={item} />
-                    </div>
-                  ))}
-                </DragScroller>
-              </section>
-            ))}
-          </div>
-        </>
-      )}
-
-      <AboutFooter />
-    </div>
-  );
+  return <LocationPickerScreen locations={publicLocations()} />;
 }

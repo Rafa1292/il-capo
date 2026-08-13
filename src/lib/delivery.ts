@@ -1,4 +1,5 @@
 import { nicoPost } from "@/lib/nico";
+import type { Location } from "@/lib/locations";
 
 /**
  * Costo del envío. Lo decide nico según la distancia entre el local y el pin
@@ -23,11 +24,15 @@ export class OutOfRangeError extends Error {
   }
 }
 
-export async function quoteDelivery(location: {
-  latitude: number;
-  longitude: number;
-}): Promise<DeliveryQuote> {
-  const json = await nicoPost<{ data: DeliveryQuote }>("/api/public/delivery-quote", location);
+export async function quoteDelivery(
+  point: { latitude: number; longitude: number },
+  sede: Location
+): Promise<DeliveryQuote> {
+  const json = await nicoPost<{ data: DeliveryQuote }>(
+    "/api/public/delivery-quote",
+    point,
+    sede
+  );
   return json.data;
 }
 
@@ -37,14 +42,15 @@ export async function quoteDelivery(location: {
  */
 export async function resolveDeliveryFee(
   deliveryMethod: "TAKEOUT" | "DELIVERY",
-  location: { latitude: number; longitude: number } | null
+  point: { latitude: number; longitude: number } | null,
+  sede: Location
 ): Promise<number> {
   if (deliveryMethod !== "DELIVERY") return 0;
-  if (!location) {
+  if (!point) {
     throw new Error("Falta marcar en el mapa dónde entregamos");
   }
 
-  const quote = await quoteDelivery(location);
+  const quote = await quoteDelivery(point, sede);
   if (!quote.covered) throw new OutOfRangeError();
 
   return quote.price;

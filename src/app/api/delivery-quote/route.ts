@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nicoGet } from "@/lib/nico";
 import { quoteDelivery } from "@/lib/delivery";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { requireLocation } from "@/lib/api-location";
 
 /**
  * Puente hacia nico para el mapa del checkout.
@@ -16,10 +17,13 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
  * pedir al autorizar el pago y nico lo verifica otra vez al registrar el pedido.
  */
 export async function GET() {
+  const { location, response } = await requireLocation();
+  if (response) return response;
+
   try {
     const json = await nicoGet<{ data: { origin: { latitude: number; longitude: number } | null } }>(
       "/api/public/delivery-quote",
-      { revalidate: 300 }
+      { revalidate: 300, location }
     );
     return NextResponse.json(json.data);
   } catch (err) {
@@ -39,6 +43,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const { location, response } = await requireLocation();
+  if (response) return response;
+
   try {
     const body = await req.json();
     const latitude = Number(body?.latitude);
@@ -47,7 +54,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Punto inválido" }, { status: 400 });
     }
 
-    const quote = await quoteDelivery({ latitude, longitude });
+    // Las zonas son por sede: el mismo punto cuesta distinto desde cada local.
+    const quote = await quoteDelivery({ latitude, longitude }, location);
     return NextResponse.json(quote);
   } catch (err) {
     console.error("[delivery-quote:POST]", err);

@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { nicoGet } from "@/lib/nico";
+import { requireLocation } from "@/lib/api-location";
 
-export const revalidate = 60; // cache menu for 1 minute
+// Depende de la cookie de sede, así que se resuelve por petición. El caché de
+// la respuesta de nico sigue vivo (revalidate abajo), compartido por sede.
+export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const { location, response } = await requireLocation();
+  if (response) return response;
+
   try {
-    const data = await nicoGet("/api/public/menu", { revalidate: 60 });
+    const data = await nicoGet("/api/public/menu", { revalidate: 60, location });
     return NextResponse.json(data);
   } catch (err) {
     console.error("[api/menu]", err);

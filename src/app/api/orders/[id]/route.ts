@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nicoGet } from "@/lib/nico";
 import { verifyOrderToken } from "@/lib/order-token";
+import { requireLocation } from "@/lib/api-location";
 
 export async function GET(
   req: NextRequest,
@@ -15,7 +16,12 @@ export async function GET(
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 
-    const data = await nicoGet(`/api/public/orders/${id}`);
+    // El pedido pertenece a la sede donde se hizo: preguntárselo a otra
+    // devolvería "no existe" aunque el token sea válido.
+    const { location, response } = await requireLocation();
+    if (response) return response;
+
+    const data = await nicoGet(`/api/public/orders/${id}`, { location });
     return NextResponse.json(data);
   } catch (err) {
     console.error("[orders/:id]", err);

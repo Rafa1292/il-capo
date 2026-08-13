@@ -19,6 +19,12 @@ interface CartStore {
   customerName: string;
   customerPhone: string;
   deliveryAddress: string;
+  /**
+   * Sede a la que pertenecen estos productos. Cada sede es un tenant distinto
+   * en nico, con su propio catálogo: mezclar dos sedes en un carrito da
+   * identificadores que no existen y el cobro falla artículo por artículo.
+   */
+  locationSlug: string | null;
   /** Punto exacto de entrega. Define la zona y con ella el costo del envío. */
   deliveryPin: { latitude: number; longitude: number } | null;
   notes: string;
@@ -32,6 +38,8 @@ interface CartStore {
   setCustomerInfo: (data: { name: string; phone: string }) => void;
   setDeliveryAddress: (address: string) => void;
   setDeliveryPin: (pin: { latitude: number; longitude: number } | null) => void;
+  /** Cambia de sede. Si es otra, se lleva el carrito: es de otro catálogo. */
+  setLocation: (slug: string) => void;
   setNotes: (notes: string) => void;
   setCartOpen: (open: boolean) => void;
 
@@ -47,6 +55,7 @@ export const useCartStore = create<CartStore>()(
       customerName: "",
       customerPhone: "",
       deliveryAddress: "",
+      locationSlug: null,
       deliveryPin: null,
       notes: "",
       cartOpen: false,
@@ -86,6 +95,21 @@ export const useCartStore = create<CartStore>()(
         set({ customerName: name, customerPhone: phone }),
       setDeliveryAddress: (deliveryAddress) => set({ deliveryAddress }),
       setDeliveryPin: (deliveryPin) => set({ deliveryPin }),
+
+      setLocation: (locationSlug) =>
+        set((s) =>
+          // Primera vez (o la misma sede): solo se anota, sin tocar el carrito.
+          s.locationSlug === null || s.locationSlug === locationSlug
+            ? { locationSlug }
+            : {
+                locationSlug,
+                items: [],
+                // La dirección y el pin también se van: las zonas de entrega
+                // son por sede, y el envío se cotiza desde otro local.
+                deliveryAddress: "",
+                deliveryPin: null,
+              }
+        ),
       setNotes: (notes) => set({ notes }),
       setCartOpen: (cartOpen) => set({ cartOpen }),
 
@@ -100,6 +124,7 @@ export const useCartStore = create<CartStore>()(
         customerName: state.customerName,
         customerPhone: state.customerPhone,
         deliveryAddress: state.deliveryAddress,
+        locationSlug: state.locationSlug,
         // Persistido a propósito: el cliente se va a Tilopay y vuelve, y el pin
         // tiene que seguir ahí para registrar el pedido con el mismo envío.
         deliveryPin: state.deliveryPin,

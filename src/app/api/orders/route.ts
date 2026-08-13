@@ -17,6 +17,7 @@ import { consultPayment, TILOPAY_CURRENCY } from "@/lib/tilopay";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { signOrderId } from "@/lib/order-token";
 import { isPhoneVerifiedHere } from "@/lib/cash-verification";
+import { requireLocation } from "@/lib/api-location";
 import type { PizzaBuilderCartSelection } from "@/types";
 
 // Idempotencia best-effort dentro del proceso. La dedupe autoritativa (persistente)
@@ -125,8 +126,12 @@ export async function POST(req: NextRequest) {
     }
     inFlight.add(orderNumber);
 
+    // Sede: define el catálogo, los precios y las zonas de entrega.
+    const { location: sede, response } = await requireLocation();
+    if (response) return response;
+
     // ── Recalcular precios con el catálogo real y sanear los ítems ──
-    const catalog = await getCatalog();
+    const catalog = await getCatalog(sede);
     const index = buildMenuIndex(catalog.categories);
 
     let total = 0;
@@ -168,7 +173,8 @@ export async function POST(req: NextRequest) {
     try {
       deliveryFee = await resolveDeliveryFee(
         body.deliveryMethod,
-        body.deliveryLocationPin ?? null
+        body.deliveryLocationPin ?? null,
+        sede
       );
     } catch (e) {
       if (e instanceof OutOfRangeError) {

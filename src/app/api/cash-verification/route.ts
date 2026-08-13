@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nicoPost, nicoPut } from "@/lib/nico";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { requireLocation } from "@/lib/api-location";
 import {
   buildCookieValue,
   VERIFIED_PHONE_COOKIE,
@@ -35,6 +36,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const { location, response } = await requireLocation();
+  if (response) return response;
+
   try {
     const body = await req.json();
     const phone = String(body?.phone ?? "").trim();
@@ -44,7 +48,8 @@ export async function POST(req: NextRequest) {
 
     const json = await nicoPost<{ data: { cooldown: boolean } }>(
       "/api/public/cash-verification",
-      { phone }
+      { phone },
+      location
     );
     return NextResponse.json({ cooldown: !!json.data?.cooldown });
   } catch (err) {
@@ -62,6 +67,9 @@ export async function PUT(req: NextRequest) {
     );
   }
 
+  const { location, response } = await requireLocation();
+  if (response) return response;
+
   try {
     const body = await req.json();
     const phone = String(body?.phone ?? "").trim();
@@ -69,7 +77,8 @@ export async function PUT(req: NextRequest) {
 
     const json = await nicoPut<{ data: { verified: boolean; reason?: string } }>(
       "/api/public/cash-verification",
-      { phone, code, customerName: body?.customerName }
+      { phone, code, customerName: body?.customerName },
+      location
     );
 
     if (!json.data?.verified) {
