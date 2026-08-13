@@ -19,6 +19,8 @@ interface CartStore {
   customerName: string;
   customerPhone: string;
   deliveryAddress: string;
+  /** Punto exacto de entrega. Define la zona y con ella el costo del envío. */
+  deliveryPin: { latitude: number; longitude: number } | null;
   notes: string;
   cartOpen: boolean;
 
@@ -29,6 +31,7 @@ interface CartStore {
   setDeliveryMethod: (m: DeliveryMethod) => void;
   setCustomerInfo: (data: { name: string; phone: string }) => void;
   setDeliveryAddress: (address: string) => void;
+  setDeliveryPin: (pin: { latitude: number; longitude: number } | null) => void;
   setNotes: (notes: string) => void;
   setCartOpen: (open: boolean) => void;
 
@@ -44,6 +47,7 @@ export const useCartStore = create<CartStore>()(
       customerName: "",
       customerPhone: "",
       deliveryAddress: "",
+      deliveryPin: null,
       notes: "",
       cartOpen: false,
 
@@ -72,6 +76,7 @@ export const useCartStore = create<CartStore>()(
           customerName: "",
           customerPhone: "",
           deliveryAddress: "",
+          deliveryPin: null,
           notes: "",
           deliveryMethod: "TAKEOUT",
         }),
@@ -80,6 +85,7 @@ export const useCartStore = create<CartStore>()(
       setCustomerInfo: ({ name, phone }) =>
         set({ customerName: name, customerPhone: phone }),
       setDeliveryAddress: (deliveryAddress) => set({ deliveryAddress }),
+      setDeliveryPin: (deliveryPin) => set({ deliveryPin }),
       setNotes: (notes) => set({ notes }),
       setCartOpen: (cartOpen) => set({ cartOpen }),
 
@@ -94,6 +100,9 @@ export const useCartStore = create<CartStore>()(
         customerName: state.customerName,
         customerPhone: state.customerPhone,
         deliveryAddress: state.deliveryAddress,
+        // Persistido a propósito: el cliente se va a Tilopay y vuelve, y el pin
+        // tiene que seguir ahí para registrar el pedido con el mismo envío.
+        deliveryPin: state.deliveryPin,
         notes: state.notes,
       }),
     }

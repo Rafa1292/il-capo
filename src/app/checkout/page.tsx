@@ -10,7 +10,16 @@ import { Separator } from "@/components/ui/separator";
 import { UtensilsCrossed, Bike, ShoppingCart, MapPin } from "lucide-react";
 import { useCartStore, itemTotal } from "@/store/cart";
 import { useProfileStore } from "@/store/profile";
+import { LocationPicker, type PickedLocation } from "@/components/checkout/location-picker";
 import Link from "next/link";
+
+/** Estado de la cotización del envío mientras el cliente mueve el pin. */
+type DeliveryQuoteState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ok"; price: number; zoneName: string | null }
+  | { status: "out-of-range" }
+  | { status: "error" };
 
 export default function CheckoutPage() {
   const {
@@ -36,6 +45,53 @@ export default function CheckoutPage() {
 
   const savedAddresses = useProfileStore((s) => s.addresses);
   const [recognized, setRecognized] = useState(false);
+
+  const deliveryPin = useCartStore((s) => s.deliveryPin);
+  const setDeliveryPin = useCartStore((s) => s.setDeliveryPin);
+  const [quote, setQuote] = useState<DeliveryQuoteState>({ status: "idle" });
+  const [storeLocation, setStoreLocation] = useState<PickedLocation | null>(null);
+
+  // Centro del mapa: dónde está la pizzería. Se pide una sola vez.
+  useEffect(() => {
+    if (deliveryMethod !== "DELIVERY" || storeLocation) return;
+    fetch("/api/delivery-quote")
+      .then((r) => r.json())
+      .then((j) => j?.origin && setStoreLocation(j.origin))
+      .catch(() => {});
+  }, [deliveryMethod, storeLocation]);
+
+  // Cotiza cada vez que se mueve el pin. El precio mostrado no es el que se
+  // cobra: ese se recalcula al autorizar y nico lo verifica otra vez.
+  useEffect(() => {
+    if (deliveryMethod !== "DELIVERY" || !deliveryPin) {
+      setQuote({ status: "idle" });
+      return;
+    }
+    let cancelled = false;
+    setQuote({ status: "loading" });
+
+    // Pequeña espera: arrastrar el pin dispara muchos cambios seguidos.
+    const timer = setTimeout(() => {
+      fetch("/api/delivery-quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(deliveryPin),
+      })
+        .then((r) => r.json())
+        .then((j) => {
+          if (cancelled) return;
+          if (j?.error) return setQuote({ status: "error" });
+          if (!j?.covered) return setQuote({ status: "out-of-range" });
+          setQuote({ status: "ok", price: j.price, zoneName: j.zoneName ?? null });
+        })
+        .catch(() => !cancelled && setQuote({ status: "error" }));
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [deliveryMethod, deliveryPin]);
 
   // Pre-llenar desde el perfil guardado (cuenta local) lo que esté vacío.
   useEffect(() => {
@@ -64,7 +120,9 @@ export default function CheckoutPage() {
     }
   }
 
-  const cartTotal = total();
+  const foodTotal = total();
+  const deliveryFee = quote.status === "ok" ? quote.price : 0;
+  const cartTotal = foodTotal + deliveryFee;
 
   if (items.length === 0) {
     return (
@@ -95,6 +153,22 @@ export default function CheckoutPage() {
     if (deliveryMethod === "DELIVERY" && !address.trim()) {
       toast.error("La dirección es requerida para entregas a domicilio");
       return;
+    }
+    if (deliveryMethod === "DELIVERY") {
+      // Sin envío confirmado no se puede autorizar: el monto de la tarjeta se
+      // fija en ese momento y después no se le puede sumar nada.
+      if (!deliveryPin) {
+        toast.error("Marcá en el mapa dónde entregamos");
+        return;
+      }
+      if (quote.status === "out-of-range") {
+        toast.error("Esa dirección está fuera de nuestra zona de entrega");
+        return;
+      }
+      if (quote.status !== "ok") {
+        toast.error("Esperá a que calculemos el envío");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -127,6 +201,8 @@ export default function CheckoutPage() {
           customerName: name.trim(),
           customerPhone: phone.trim(),
           customerEmail: email.trim(),
+          deliveryMethod,
+          deliveryLocation: deliveryMethod === "DELIVERY" ? deliveryPin : null,
           // El servidor compara este total (el que ve el cliente) con el recalculado:
           // si un precio cambió, frena en vez de cobrar un monto distinto al mostrado.
           expectedTotal: cartTotal,
@@ -135,6 +211,12 @@ export default function CheckoutPage() {
 
       const json = await res.json();
 
+      if (res.status === 409 && json.code === "OUT_OF_RANGE") {
+        toast.error(json.error, { duration: 8000 });
+        setQuote({ status: "out-of-range" });
+        setIsSubmitting(false);
+        return;
+      }
       if (res.status === 409 && json.code === "PRICES_CHANGED") {
         toast.error(json.error, { duration: 8000 });
         setIsSubmitting(false);
@@ -265,6 +347,44 @@ export default function CheckoutPage() {
                 rows={3}
                 required
               />
+
+              {/* El mapa no reemplaza las señas: el mensajero necesita las dos
+                  cosas. El punto define el precio; las señas, cómo llegar. */}
+              <div className="space-y-1.5 pt-2">
+                <Label>¿Dónde te lo dejamos? *</Label>
+                {storeLocation ? (
+                  <LocationPicker
+                    value={deliveryPin}
+                    onChange={setDeliveryPin}
+                    fallbackCenter={storeLocation}
+                  />
+                ) : (
+                  <div className="flex h-56 items-center justify-center rounded-xl border text-sm text-muted-foreground">
+                    Cargando el mapa...
+                  </div>
+                )}
+
+                {quote.status === "loading" && (
+                  <p className="text-xs text-muted-foreground">Calculando el envío...</p>
+                )}
+                {quote.status === "ok" && (
+                  <p className="text-xs">
+                    Envío{quote.zoneName ? ` (${quote.zoneName})` : ""}:{" "}
+                    <span className="font-semibold">₡{quote.price.toLocaleString("es-CR")}</span>
+                  </p>
+                )}
+                {quote.status === "out-of-range" && (
+                  <p className="text-xs text-destructive">
+                    Ese punto queda fuera de nuestra zona de entrega. Probá con
+                    &quot;Para recoger&quot; o escribinos por WhatsApp.
+                  </p>
+                )}
+                {quote.status === "error" && (
+                  <p className="text-xs text-destructive">
+                    No pudimos calcular el envío. Movés el pin otra vez o probá en un momento.
+                  </p>
+                )}
+              </div>
             </div>
           )}
           <div className="space-y-1.5">
@@ -294,6 +414,19 @@ export default function CheckoutPage() {
               </span>
             </div>
           ))}
+          {deliveryMethod === "DELIVERY" && (
+            <>
+              <Separator />
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Envío</span>
+                <span className="font-medium">
+                  {quote.status === "ok"
+                    ? `₡${quote.price.toLocaleString("es-CR")}`
+                    : "—"}
+                </span>
+              </div>
+            </>
+          )}
           <Separator />
           <div className="flex justify-between font-bold">
             <span>Total</span>

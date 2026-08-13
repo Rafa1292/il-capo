@@ -3,12 +3,16 @@ import { createPayment, TILOPAY_CURRENCY } from "@/lib/tilopay";
 import { getCatalog } from "@/lib/catalog";
 import { priceCart, PricingError, type PriceableItem } from "@/lib/pricing";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { resolveDeliveryFee, OutOfRangeError } from "@/lib/delivery";
 
 interface CreateBody {
   items: PriceableItem[];
   customerName: string;
   customerPhone: string;
   customerEmail: string;
+  deliveryMethod?: "TAKEOUT" | "DELIVERY";
+  /** Pin de entrega: define la zona y con ella el costo del envío. */
+  deliveryLocation?: { latitude: number; longitude: number } | null;
   /** Total que el cliente vio en pantalla; si difiere del recalculado, se frena. */
   expectedTotal?: number;
 }
@@ -68,6 +72,25 @@ export async function POST(req: NextRequest) {
     if (total <= 0) {
       return NextResponse.json({ error: "Total inválido" }, { status: 400 });
     }
+
+    // El envío entra en la autorización: después no se puede sumar. Una tarjeta
+    // se captura por el monto autorizado o menos, nunca por más.
+    let deliveryFee: number;
+    try {
+      deliveryFee = await resolveDeliveryFee(
+        body.deliveryMethod ?? "TAKEOUT",
+        body.deliveryLocation ?? null
+      );
+    } catch (e) {
+      if (e instanceof OutOfRangeError) {
+        return NextResponse.json({ error: e.message, code: "OUT_OF_RANGE" }, { status: 409 });
+      }
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "No se pudo calcular el envío" },
+        { status: 400 }
+      );
+    }
+    total += deliveryFee;
 
     // 🛑 Si el precio de algo cambió entre que el cliente armó el carrito y pagó,
     // el total que vio NO es el que se le cobraría. Frenamos antes de autorizar:

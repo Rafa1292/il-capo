@@ -67,6 +67,9 @@ function ReturnContent() {
         customerPhone: s.customerPhone,
         deliveryMethod: s.deliveryMethod,
         deliveryAddress: s.deliveryMethod === "DELIVERY" ? s.deliveryAddress : undefined,
+        // El mismo pin con el que se autorizó: el servidor recotiza con él y el
+        // envío tiene que dar igual, o el monto pagado no cuadra y se frena.
+        deliveryLocationPin: s.deliveryMethod === "DELIVERY" ? s.deliveryPin : undefined,
         notes: s.notes || undefined,
         items: s.items.map((item) => ({
           saleItemId: item.saleItemId,

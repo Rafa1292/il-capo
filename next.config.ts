@@ -29,7 +29,10 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           // Los links de pedido llevan token en la URL: no filtrarlos como referrer ya
           // lo cubre la política anterior (solo origin cross-origin).
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          // geolocation=(self): el checkout la usa para colocar el pin de
+          // entrega. Sigue bloqueada para terceros embebidos, y el navegador
+          // igual le pide permiso al cliente.
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
         ],
       },
     ];

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nicoPost } from "@/lib/nico";
+import { resolveDeliveryFee, OutOfRangeError } from "@/lib/delivery";
 import { getCatalog } from "@/lib/catalog";
 import {
   buildMenuIndex,
@@ -50,6 +51,8 @@ interface ConfirmBody {
   customerPhone: string;
   deliveryMethod: "TAKEOUT" | "DELIVERY";
   deliveryAddress?: string;
+  /** Pin que marcó el cliente en el mapa: define la zona y el costo del envío. */
+  deliveryLocationPin?: { latitude: number; longitude: number } | null;
   notes?: string;
   items: IncomingItem[];
 }
@@ -139,6 +142,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Total inválido" }, { status: 400 });
     }
 
+    // ── Envío: el mismo cálculo que entró en la autorización ──
+    // Se vuelve a preguntar en vez de confiar en lo que manda el navegador: si
+    // no coincidiera con lo autorizado, el chequeo de monto de abajo lo frena.
+    let deliveryFee: number;
+    try {
+      deliveryFee = await resolveDeliveryFee(
+        body.deliveryMethod,
+        body.deliveryLocationPin ?? null
+      );
+    } catch (e) {
+      if (e instanceof OutOfRangeError) {
+        return NextResponse.json({ error: e.message, code: "OUT_OF_RANGE" }, { status: 409 });
+      }
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : "No se pudo calcular el envío" },
+        { status: 400 }
+      );
+    }
+    total += deliveryFee;
+
     // ── Verificación autoritativa del pago en Tilopay ──
     const tx = await consultPayment(orderNumber);
     if (!tx || tx.code !== "1") {
@@ -162,9 +185,16 @@ export async function POST(req: NextRequest) {
       deliveryMethod: body.deliveryMethod,
       deliveryAddress:
         body.deliveryMethod === "DELIVERY" ? clip(body.deliveryAddress, 500) : undefined,
+      // nico vuelve a cotizar con este pin y compara contra expressFee: si no
+      // cuadra, rechaza el pedido en vez de aceptarlo mal cobrado.
+      deliveryLatitude: body.deliveryLocationPin?.latitude,
+      deliveryLongitude: body.deliveryLocationPin?.longitude,
+      expressFee: body.deliveryMethod === "DELIVERY" ? deliveryFee : undefined,
       notes: clip(body.notes, 500),
       items: nicoItems,
-      estimatedTotal: total,
+      // El total del pedido es solo la comida: en nico el express va aparte,
+      // fuera del total de venta.
+      estimatedTotal: total - deliveryFee,
       payment: {
         provider: "tilopay",
         orderNumber,
