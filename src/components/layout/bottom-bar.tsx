@@ -4,12 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShoppingBag, UtensilsCrossed } from "lucide-react";
 import { useCartStore } from "@/store/cart";
-
-const WA_NUMBER = "XXXXXXXXXX"; // reemplazar con el número real
+import { WHATSAPP_URL } from "@/lib/contact";
 
 const WhatsAppButton = ({ raised }: { raised: boolean }) => (
   <a
-    href={`https://wa.me/${WA_NUMBER}`}
+    href={WHATSAPP_URL}
     target="_blank"
     rel="noopener noreferrer"
     style={{ bottom: raised ? "5rem" : "1.5rem" }}

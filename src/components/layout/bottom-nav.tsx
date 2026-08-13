@@ -5,9 +5,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Pizza, User, Factory } from "lucide-react";
 import { CartSheet } from "@/components/cart/cart-sheet";
+import { WHATSAPP_URL } from "@/lib/contact";
 import { cn } from "@/lib/utils";
-
-const WA_NUMBER = "XXXXXXXXXX"; // reemplazar con el número real
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -25,7 +24,7 @@ export function BottomNav() {
     <>
       {/* WhatsApp — solo en home */}
       {isHome && <a
-        href={`https://wa.me/${WA_NUMBER}`}
+        href={WHATSAPP_URL}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-20 right-4 z-50 h-12 w-12 bg-[#25D366] hover:bg-[#1ebe5d] rounded-full flex items-center justify-center shadow-lg transition-colors"
