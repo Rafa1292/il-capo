@@ -55,7 +55,7 @@ function StatusDisplay({ order }: { order: OrderStatus }) {
             {order.rejectedReason}
           </p>
         )}
-        <Link href="/menu">
+        <Link href="/">
           <Button className="mt-2 bg-primary hover:bg-primary/90">
             Intentar nuevamente
           </Button>

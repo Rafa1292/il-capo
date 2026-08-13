@@ -14,8 +14,10 @@ export function BottomNav() {
 
   if (pathname.startsWith("/checkout") || pathname.startsWith("/pedido")) return null;
 
+  // La portada ES la carta, así que el logo central y la pestaña "Menú" llevan
+  // al mismo sitio y se marcan juntos.
   const isHome = pathname === "/";
-  const isMenu = pathname.startsWith("/menu");
+  const isMenu = isHome;
   const isFactory = pathname.startsWith("/factory");
   const isLogin = pathname.startsWith("/cuenta");
 
@@ -62,7 +64,7 @@ export function BottomNav() {
             {/* Izquierda — Menú + Factory */}
             <div className="flex flex-1 items-center justify-start gap-1">
               <Link
-                href="/menu"
+                href="/"
                 className={cn(
                   "flex flex-col items-center gap-0.5 px-2.5 py-2 transition-colors text-xs",
                   isMenu ? "text-primary" : "text-foreground/50 hover:text-foreground"

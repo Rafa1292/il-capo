@@ -74,7 +74,7 @@ export default function CheckoutPage() {
           <p className="font-semibold text-lg">Tu carrito está vacío</p>
           <p className="text-sm text-muted-foreground mt-1">Agrega productos desde el menú</p>
         </div>
-        <Link href="/menu">
+        <Link href="/">
           <Button className="bg-primary hover:bg-primary/90">Ver el menú</Button>
         </Link>
       </div>

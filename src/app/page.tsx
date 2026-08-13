@@ -1,95 +1,96 @@
-import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { UtensilsCrossed, Clock, Leaf, Wheat, Flame } from "lucide-react";
+import { nicoGet, isBuildPrerender } from "@/lib/nico";
+import { MenuItemCard } from "@/components/menu/menu-item-card";
+import { CategoryNav } from "@/components/menu/category-nav";
+import { OpeningStatus } from "@/components/menu/opening-status";
+import { AboutFooter } from "@/components/menu/about-footer";
+import { DragScroller } from "@/components/ui/drag-scroller";
+import type { MenuCategory } from "@/types";
 
-export default function Home() {
+// ⚠️ No atrapar errores en runtime: con ISR, si la revalidación falla Next sigue
+// sirviendo la última versión buena del menú. Atrapar y devolver [] cachearía
+// "menú no disponible" 60s para todos aunque nico vuelva en segundos.
+// La única excepción es el prerender del build: ver isBuildPrerender().
+async function getMenu(): Promise<MenuCategory[]> {
+  try {
+    const json = await nicoGet<{ data: MenuCategory[] }>("/api/public/menu", {
+      revalidate: 60,
+    });
+    return json.data ?? [];
+  } catch (err) {
+    if (isBuildPrerender()) return [];
+    throw err;
+  }
+}
+
+export const revalidate = 60;
+
+export default async function HomePage() {
+  const categories = await getMenu();
+
   return (
-    <div className="flex flex-col gap-10 py-4">
-
-      {/* ── Hero ── */}
-      <section className="flex flex-col items-center gap-5 pt-4 text-center">
+    <div>
+      {/* Cabecera — logo y si están abiertos ahora mismo */}
+      <div className="flex items-center justify-between gap-4 pb-6">
         <Image
           src="/logo.png"
           alt="il Capo Pizzería"
-          width={120}
-          height={120}
+          width={56}
+          height={56}
           className="object-contain"
           priority
         />
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          Pizzería artesanal
-        </p>
-        {/* Decorative rule */}
-        <div className="flex items-center gap-3 w-44">
-          <span className="flex-1 border-t border-border" />
-          <span className="text-primary/60 text-[10px]">✦</span>
-          <span className="flex-1 border-t border-border" />
-        </div>
-        <Link href="/menu">
-          <Button className="h-11 px-8 text-sm bg-primary hover:bg-primary/90 gap-2 rounded-full font-semibold tracking-wide">
-            <UtensilsCrossed className="h-4 w-4" />
-            Ver el menú
-          </Button>
-        </Link>
-      </section>
+        <OpeningStatus />
+      </div>
 
-      {/* ── Nuestra cocina ── */}
-      <section className="space-y-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-          Nuestra cocina
-        </p>
-        <div className="space-y-5">
-          <div className="flex items-start gap-4">
-            <Wheat className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold">Masa artesanal</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                Amasada a mano cada día, sin conservantes
-              </p>
+      {categories.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+          <p className="text-muted-foreground">El menú no está disponible en este momento.</p>
+          <p className="text-sm text-muted-foreground">Por favor intenta nuevamente más tarde.</p>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col items-center gap-3 pb-5 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground">
+              Nuestra carta
+            </p>
+            <div className="flex items-center gap-3 w-40">
+              <span className="flex-1 border-t border-border" />
+              <span className="text-primary/60 text-[10px]">✦</span>
+              <span className="flex-1 border-t border-border" />
             </div>
           </div>
-          <div className="flex items-start gap-4">
-            <Leaf className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold">Ingredientes frescos</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                Selección diaria de productos de temporada y máxima calidad
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-4">
-            <Flame className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold">Hecho al momento</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                Cada pizza se arma y hornea cuando haces tu pedido
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <div className="border-t border-border" />
+          <CategoryNav categories={categories} />
 
-      {/* ── Horario ── */}
-      <section className="space-y-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-1.5">
-          <Clock className="h-3 w-3" />
-          Horario
-        </p>
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Lunes – Jueves</span>
-            <span className="font-medium tabular-nums">11:00 – 20:30</span>
+          <div className="space-y-8 mt-5">
+            {categories.map((category) => (
+              <section key={category.id} id={`cat-${category.id}`}>
+                {/* Divisor ornamental centrado — estilo carta italiana */}
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-border" />
+                  <h2 className="flex items-center gap-2 text-base font-bold uppercase tracking-[0.15em] text-foreground">
+                    <span className="text-[9px] text-primary/70">✦</span>
+                    {category.name}
+                    <span className="text-[9px] text-primary/70">✦</span>
+                  </h2>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                {/* Carrusel horizontal — se arrastra con el mouse en escritorio */}
+                <DragScroller className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
+                  {category.items.map((item) => (
+                    <div key={item.id} className="w-72 shrink-0 snap-start">
+                      <MenuItemCard item={item} />
+                    </div>
+                  ))}
+                </DragScroller>
+              </section>
+            ))}
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Viernes – Domingo</span>
-            <span className="font-medium tabular-nums">11:00 – 21:30</span>
-          </div>
-        </div>
-      </section>
+        </>
+      )}
 
+      <AboutFooter />
     </div>
   );
 }
