@@ -7,7 +7,9 @@ import type { PizzaBuilderData } from "@/types";
 // La única excepción es el prerender del build: ver isBuildPrerender().
 async function getPizzaBuilderData(): Promise<PizzaBuilderData | null> {
   try {
-    const json = await nicoGet<{ data: PizzaBuilderData }>("/api/public/pizza-builder");
+    const json = await nicoGet<{ data: PizzaBuilderData }>("/api/public/pizza-builder", {
+      revalidate: 60,
+    });
     return json.data ?? null;
   } catch (err) {
     if (isBuildPrerender()) return null;

@@ -10,7 +10,9 @@ import type { MenuCategory } from "@/types";
 // La única excepción es el prerender del build: ver isBuildPrerender().
 async function getMenu(): Promise<MenuCategory[]> {
   try {
-    const json = await nicoGet<{ data: MenuCategory[] }>("/api/public/menu");
+    const json = await nicoGet<{ data: MenuCategory[] }>("/api/public/menu", {
+      revalidate: 60,
+    });
     return json.data ?? [];
   } catch (err) {
     if (isBuildPrerender()) return [];

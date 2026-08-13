@@ -4,7 +4,9 @@ import type { PizzaBuilderData } from "@/types";
 
 export async function GET() {
   try {
-    const json = await nicoGet<{ data: PizzaBuilderData }>("/api/public/pizza-builder");
+    const json = await nicoGet<{ data: PizzaBuilderData }>("/api/public/pizza-builder", {
+      revalidate: 60,
+    });
     return NextResponse.json(json.data);
   } catch (e) {
     console.error("[api/pizza-builder]", e);

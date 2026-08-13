@@ -29,12 +29,26 @@ export function isBuildPrerender(): boolean {
   return process.env.NEXT_PHASE === "phase-production-build";
 }
 
-export async function nicoGet<T>(path: string): Promise<T> {
+/**
+ * `revalidate` en segundos cachea la respuesta y la comparte entre visitantes.
+ * Sin él la llamada es `no-store`: una consulta a nico por cada visita.
+ *
+ * Solo para lo que se muestra (menú, pizza builder), donde ver la carta unos
+ * segundos vieja no tiene consecuencia y el precio real se recalcula al cobrar.
+ * NUNCA para tarificar (getCatalog) ni para el estado de un pedido: ahí un dato
+ * viejo es plata mal cobrada o un estado equivocado.
+ */
+export async function nicoGet<T>(path: string, opts?: { revalidate?: number }): Promise<T> {
+  const caching =
+    opts?.revalidate === undefined
+      ? ({ cache: "no-store" } as const)
+      : ({ next: { revalidate: opts.revalidate } } as const);
+
   let res: Response;
   try {
     res = await fetch(`${NICO_API_URL}${path}`, {
       headers: nicoHeaders(),
-      cache: "no-store",
+      ...caching,
       signal: AbortSignal.timeout(NICO_TIMEOUT_MS),
     });
   } catch (err) {
