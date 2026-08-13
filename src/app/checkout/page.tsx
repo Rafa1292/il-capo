@@ -144,6 +144,25 @@ export default function CheckoutPage() {
   const deliveryFee = quote.status === "ok" ? quote.price : 0;
   const cartTotal = foodTotal + deliveryFee;
 
+  /**
+   * Por qué no se puede pedir todavía, o null si se puede.
+   *
+   * Va en el texto del botón en vez de aparecer como error al tocarlo: el
+   * cliente ve qué le falta antes de intentar, no después.
+   */
+  const blockedReason: string | null = (() => {
+    if (paymentMethod === "CASH" && !phoneIsVerified) {
+      return "Verificá tu número para continuar";
+    }
+    if (deliveryMethod === "DELIVERY") {
+      if (!deliveryPin) return "Marcá en el mapa dónde entregamos";
+      if (quote.status === "loading") return "Calculando el envío...";
+      if (quote.status === "out-of-range") return "Fuera de la zona de entrega";
+      if (quote.status === "error") return "No pudimos calcular el envío";
+    }
+    return null;
+  })();
+
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center gap-6 py-20 text-center">
@@ -555,15 +574,16 @@ export default function CheckoutPage() {
       <Button
         type="submit"
         className="w-full h-12 text-base bg-primary hover:bg-primary/90"
-        disabled={isSubmitting}
+        disabled={isSubmitting || blockedReason !== null}
       >
         {isSubmitting
           ? paymentMethod === "CASH"
             ? "Enviando pedido..."
             : "Redirigiendo al pago..."
-          : paymentMethod === "CASH"
-            ? `Pedir — pago ₡${cartTotal.toLocaleString("es-CR")} al recibir`
-            : `Pagar ₡${cartTotal.toLocaleString("es-CR")}`}
+          : (blockedReason ??
+            (paymentMethod === "CASH"
+              ? `Pedir — pago ₡${cartTotal.toLocaleString("es-CR")} al recibir`
+              : `Pagar ₡${cartTotal.toLocaleString("es-CR")}`))}
       </Button>
     </form>
   );
