@@ -7,11 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { UtensilsCrossed, Bike, ShoppingCart, MapPin } from "lucide-react";
+import { UtensilsCrossed, Bike, ShoppingCart, MapPin, CreditCard, Banknote } from "lucide-react";
 import { useCartStore, itemTotal } from "@/store/cart";
 import { useProfileStore } from "@/store/profile";
 import { LocationPicker, type PickedLocation } from "@/components/checkout/location-picker";
+import { CashVerification } from "@/components/checkout/cash-verification";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { saveLastOrder } from "@/lib/last-order";
+
+type PaymentMethod = "CARD" | "CASH";
 
 /** Estado de la cotización del envío mientras el cliente mueve el pin. */
 type DeliveryQuoteState =
@@ -50,6 +55,21 @@ export default function CheckoutPage() {
   const setDeliveryPin = useCartStore((s) => s.setDeliveryPin);
   const [quote, setQuote] = useState<DeliveryQuoteState>({ status: "idle" });
   const [storeLocation, setStoreLocation] = useState<PickedLocation | null>(null);
+
+  const router = useRouter();
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CARD");
+  /** Número ya comprobado en este dispositivo (lo dice la cookie firmada). */
+  const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/cash-verification")
+      .then((r) => r.json())
+      .then((j) => setVerifiedPhone(j?.phone ?? null))
+      .catch(() => {});
+  }, []);
+
+  const digitsOnly = (s: string) => s.replace(/\D/g, "");
+  const phoneIsVerified = !!verifiedPhone && verifiedPhone === digitsOnly(phone);
 
   // Centro del mapa: dónde está la pizzería. Se pide una sola vez.
   useEffect(() => {
@@ -146,8 +166,17 @@ export default function CheckoutPage() {
       toast.error("Nombre y teléfono son requeridos");
       return;
     }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    // El correo es para el comprobante de la tarjeta: en efectivo no hay nada
+    // que mandar, así que no se pide.
+    if (
+      paymentMethod === "CARD" &&
+      (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+    ) {
       toast.error("Ingresa un correo válido para el comprobante de pago");
+      return;
+    }
+    if (paymentMethod === "CASH" && !phoneIsVerified) {
+      toast.error("Verificá tu número para pagar en efectivo");
       return;
     }
     if (deliveryMethod === "DELIVERY" && !address.trim()) {
@@ -186,6 +215,42 @@ export default function CheckoutPage() {
       const profile = useProfileStore.getState();
       profile.setProfile({ name: name.trim(), phone: phone.trim(), email: email.trim() });
       if (deliveryMethod === "DELIVERY") profile.rememberAddress(address);
+
+      // Efectivo: el pedido se registra de una. No hay pasarela de por medio
+      // porque el cobro ocurre al entregar.
+      if (paymentMethod === "CASH") {
+        const cashRes = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            paymentMethod: "CASH",
+            customerName: name.trim(),
+            customerPhone: phone.trim(),
+            deliveryMethod,
+            deliveryAddress: deliveryMethod === "DELIVERY" ? address.trim() : undefined,
+            deliveryLocationPin: deliveryMethod === "DELIVERY" ? deliveryPin : undefined,
+            notes: orderNotes.trim() || undefined,
+            items: items.map((i) => ({
+              saleItemId: i.saleItemId,
+              description: i.description,
+              quantity: i.quantity,
+              modifiers: i.modifiers.length > 0 ? i.modifiers : undefined,
+              pizzaBuilder: i.pizzaBuilder,
+            })),
+          }),
+        });
+        const cashJson = await cashRes.json();
+        if (!cashRes.ok || !cashJson.data?.id) {
+          toast.error(cashJson.error ?? "No se pudo registrar el pedido");
+          setIsSubmitting(false);
+          return;
+        }
+        const token = cashJson.data.accessToken as string | undefined;
+        if (token) saveLastOrder(cashJson.data.id, token);
+        useCartStore.getState().clearCart();
+        router.replace(`/pedido/${cashJson.data.id}${token ? `?t=${encodeURIComponent(token)}` : ""}`);
+        return;
+      }
 
       const res = await fetch("/api/payments/create", {
         method: "POST",
@@ -273,6 +338,47 @@ export default function CheckoutPage() {
         </div>
       </section>
 
+      {/* Payment method */}
+      <section className="space-y-3">
+        <h2 className="font-semibold">¿Cómo pagás?</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("CARD")}
+            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-colors ${
+              paymentMethod === "CARD"
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/40"
+            }`}
+          >
+            <CreditCard className={`h-6 w-6 ${paymentMethod === "CARD" ? "text-primary" : "text-muted-foreground"}`} />
+            <span className={`text-sm font-medium ${paymentMethod === "CARD" ? "text-primary" : ""}`}>
+              Tarjeta
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("CASH")}
+            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-colors ${
+              paymentMethod === "CASH"
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/40"
+            }`}
+          >
+            <Banknote className={`h-6 w-6 ${paymentMethod === "CASH" ? "text-primary" : "text-muted-foreground"}`} />
+            <span className={`text-sm font-medium ${paymentMethod === "CASH" ? "text-primary" : ""}`}>
+              Efectivo
+            </span>
+          </button>
+        </div>
+        {paymentMethod === "CASH" && (
+          <p className="text-xs text-muted-foreground">
+            Pagás todo al recibir, incluido el envío. Tené el monto listo para
+            facilitarle el vuelto al mensajero.
+          </p>
+        )}
+      </section>
+
       {/* Customer info */}
       <section className="space-y-4">
         <h2 className="font-semibold">Tus datos</h2>
@@ -305,22 +411,33 @@ export default function CheckoutPage() {
               required
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Correo *</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="tu@correo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+          {/* Solo con tarjeta: el correo existe para el comprobante del cobro. */}
+          {paymentMethod === "CARD" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Correo *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="tu@correo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Ahí te llega el comprobante del pago con tarjeta y cualquier aviso
+                sobre una devolución. Lo pedimos una sola vez: la próxima ya viene
+                listo.
+              </p>
+            </div>
+          )}
+
+          {paymentMethod === "CASH" && !phoneIsVerified && (
+            <CashVerification
+              phone={phone}
+              customerName={name}
+              onVerified={() => setVerifiedPhone(digitsOnly(phone))}
             />
-            <p className="text-xs text-muted-foreground">
-              Ahí te llega el comprobante del pago con tarjeta y cualquier aviso
-              sobre una devolución. Lo pedimos una sola vez: la próxima ya viene
-              listo.
-            </p>
-          </div>
+          )}
           {deliveryMethod === "DELIVERY" && (
             <div className="space-y-1.5">
               <Label htmlFor="address">Dirección de entrega *</Label>
@@ -441,8 +558,12 @@ export default function CheckoutPage() {
         disabled={isSubmitting}
       >
         {isSubmitting
-          ? "Redirigiendo al pago..."
-          : `Pagar ₡${cartTotal.toLocaleString("es-CR")}`}
+          ? paymentMethod === "CASH"
+            ? "Enviando pedido..."
+            : "Redirigiendo al pago..."
+          : paymentMethod === "CASH"
+            ? `Pedir — pago ₡${cartTotal.toLocaleString("es-CR")} al recibir`
+            : `Pagar ₡${cartTotal.toLocaleString("es-CR")}`}
       </Button>
     </form>
   );

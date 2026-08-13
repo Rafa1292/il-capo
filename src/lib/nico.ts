@@ -61,11 +61,11 @@ export async function nicoGet<T>(path: string, opts?: { revalidate?: number }): 
   return res.json();
 }
 
-export async function nicoPost<T>(path: string, body: unknown): Promise<T> {
+async function nicoWrite<T>(method: "POST" | "PUT", path: string, body: unknown): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${NICO_API_URL}${path}`, {
-      method: "POST",
+      method,
       headers: nicoHeaders(),
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(NICO_TIMEOUT_MS),
@@ -78,4 +78,12 @@ export async function nicoPost<T>(path: string, body: unknown): Promise<T> {
     throw new Error(errBody?.error ?? `Nico API error ${res.status}`);
   }
   return res.json();
+}
+
+export async function nicoPut<T>(path: string, body: unknown): Promise<T> {
+  return nicoWrite<T>("PUT", path, body);
+}
+
+export async function nicoPost<T>(path: string, body: unknown): Promise<T> {
+  return nicoWrite<T>("POST", path, body);
 }

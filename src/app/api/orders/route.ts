@@ -16,6 +16,7 @@ import {
 import { consultPayment, TILOPAY_CURRENCY } from "@/lib/tilopay";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { signOrderId } from "@/lib/order-token";
+import { isPhoneVerifiedHere } from "@/lib/cash-verification";
 import type { PizzaBuilderCartSelection } from "@/types";
 
 // Idempotencia best-effort dentro del proceso. La dedupe autoritativa (persistente)
@@ -51,6 +52,8 @@ interface ConfirmBody {
   customerPhone: string;
   deliveryMethod: "TAKEOUT" | "DELIVERY";
   deliveryAddress?: string;
+  /** CASH = se cobra al entregar; no pasa por Tilopay. */
+  paymentMethod?: "CASH" | "CARD";
   /** Pin que marcó el cliente en el mapa: define la zona y el costo del envío. */
   deliveryLocationPin?: { latitude: number; longitude: number } | null;
   notes?: string;
@@ -82,6 +85,13 @@ export async function POST(req: NextRequest) {
 
     const body = (await req.json()) as ConfirmBody;
     orderNumber = body.orderNumber?.trim();
+
+    // Efectivo: no hay cobro en línea, así que no hay referencia de pago que
+    // verificar. La idempotencia se apoya en una referencia propia.
+    const isCash = body.paymentMethod === "CASH";
+    if (isCash && !orderNumber) {
+      orderNumber = `CASH-${crypto.randomUUID()}`;
+    }
 
     // ── Validaciones básicas ──
     if (!orderNumber) {
@@ -162,20 +172,33 @@ export async function POST(req: NextRequest) {
     }
     total += deliveryFee;
 
-    // ── Verificación autoritativa del pago en Tilopay ──
-    const tx = await consultPayment(orderNumber);
-    if (!tx || tx.code !== "1") {
-      return NextResponse.json({ error: "El pago no está aprobado" }, { status: 402 });
-    }
-    if (tx.currency !== TILOPAY_CURRENCY) {
-      return NextResponse.json({ error: "Moneda del pago no coincide" }, { status: 409 });
-    }
-    // 🔒 El monto pagado DEBE coincidir con el total recalculado en el servidor.
-    if (!centsEqual(Number(tx.amount), total)) {
-      console.error(
-        `[orders] Monto no coincide orderNumber=${orderNumber} pagado=${tx.amount} total=${total}`
-      );
-      return NextResponse.json({ error: "El monto pagado no coincide con el pedido" }, { status: 409 });
+    // ── Verificación del pago ──
+    // En efectivo no hay nada que verificar: se cobra al entregar. Lo que sí se
+    // exige es que el número esté comprobado en este dispositivo; nico lo vuelve
+    // a comprobar por su cuenta y rechaza si no.
+    let tx: Awaited<ReturnType<typeof consultPayment>> = null;
+    if (isCash) {
+      if (!(await isPhoneVerifiedHere(body.customerPhone))) {
+        return NextResponse.json(
+          { error: "Necesitamos verificar tu número", code: "CASH_NOT_VERIFIED" },
+          { status: 403 }
+        );
+      }
+    } else {
+      tx = await consultPayment(orderNumber);
+      if (!tx || tx.code !== "1") {
+        return NextResponse.json({ error: "El pago no está aprobado" }, { status: 402 });
+      }
+      if (tx.currency !== TILOPAY_CURRENCY) {
+        return NextResponse.json({ error: "Moneda del pago no coincide" }, { status: 409 });
+      }
+      // 🔒 El monto pagado DEBE coincidir con el total recalculado en el servidor.
+      if (!centsEqual(Number(tx.amount), total)) {
+        console.error(
+          `[orders] Monto no coincide orderNumber=${orderNumber} pagado=${tx.amount} total=${total}`
+        );
+        return NextResponse.json({ error: "El monto pagado no coincide con el pedido" }, { status: 409 });
+      }
     }
 
     // ── Crear el pedido en nico con precios autoritativos + referencia de pago ──
@@ -195,14 +218,19 @@ export async function POST(req: NextRequest) {
       // El total del pedido es solo la comida: en nico el express va aparte,
       // fuera del total de venta.
       estimatedTotal: total - deliveryFee,
-      payment: {
-        provider: "tilopay",
-        orderNumber,
-        auth: tx.auth,
-        amount: Number(tx.amount),
-        currency: tx.currency,
-        tilopayId: tx.id_tilopay,
-      },
+      // El cajero necesita saberlo antes de despachar: si es efectivo, el
+      // mensajero sale con vuelto.
+      paymentMethodHint: isCash ? ("CASH" as const) : ("CARD" as const),
+      payment: tx
+        ? {
+            provider: "tilopay",
+            orderNumber,
+            auth: tx.auth,
+            amount: Number(tx.amount),
+            currency: tx.currency,
+            tilopayId: tx.id_tilopay,
+          }
+        : undefined,
     };
 
     const data = await nicoPost<{ success?: boolean; data?: { id?: string } }>(
