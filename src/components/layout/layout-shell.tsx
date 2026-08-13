@@ -28,7 +28,10 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           cartOpen ? "w-80" : "w-0"
         )}
       >
-        <div className="w-80 flex flex-col h-full">
+        {/* pb-16: el bottom nav es `fixed inset-x-0` y en escritorio se pinta
+            encima del sidebar; sin este espacio tapa el total y el botón de
+            checkout, que viven al final de la columna. */}
+        <div className="w-80 flex flex-col h-full pb-16">
           {/* Header del sidebar */}
           <div className="flex items-center justify-between px-4 py-4 border-b shrink-0">
             <h2 className="font-semibold text-base">Tu pedido</h2>

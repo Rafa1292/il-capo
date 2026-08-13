@@ -318,7 +318,7 @@ export function ModifierSelector({ item, open, onClose, onConfirm }: Props) {
               })}
             </div>
           ) : (
-            <span className="text-xs text-muted-foreground">Cantidad de pizzas</span>
+            <span className="text-xs text-muted-foreground">Cantidad</span>
           )}
         </div>
 

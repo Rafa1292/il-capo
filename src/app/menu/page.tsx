@@ -1,6 +1,7 @@
 import { nicoGet } from "@/lib/nico";
 import { MenuItemCard } from "@/components/menu/menu-item-card";
 import { CategoryNav } from "@/components/menu/category-nav";
+import { DragScroller } from "@/components/ui/drag-scroller";
 import type { MenuCategory } from "@/types";
 
 // ⚠️ No atrapar errores aquí: con ISR, si la revalidación falla Next sigue
@@ -58,17 +59,14 @@ export default async function MenuPage() {
               </h2>
               <span className="h-px flex-1 bg-border" />
             </div>
-            {/* Carrusel horizontal — categorías cortas (≤4 ítems) */}
-            <div
-              className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1"
-              style={{ scrollbarWidth: "none" }}
-            >
+            {/* Carrusel horizontal — se arrastra con el mouse en escritorio */}
+            <DragScroller className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
               {category.items.map((item) => (
                 <div key={item.id} className="w-72 shrink-0 snap-start">
                   <MenuItemCard item={item} />
                 </div>
               ))}
-            </div>
+            </DragScroller>
           </section>
         ))}
       </div>

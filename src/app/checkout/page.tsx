@@ -35,6 +35,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const savedAddresses = useProfileStore((s) => s.addresses);
+  const [recognized, setRecognized] = useState(false);
 
   // Pre-llenar desde el perfil guardado (cuenta local) lo que esté vacío.
   useEffect(() => {
@@ -42,7 +43,26 @@ export default function CheckoutPage() {
     setName((v) => v || p.name);
     setPhone((v) => v || p.phone);
     setEmail((v) => v || p.email);
+    if (p.phone) setRecognized(true);
   }, []);
+
+  /**
+   * Si el teléfono que escriben es el de este dispositivo, se rellena el resto.
+   * Es el caso del cliente que repite y llegó con el formulario en blanco (borró
+   * datos del navegador, otra pestaña). No se borra nada si el número es otro:
+   * puede estar corrigiendo un dígito y quedarse sin lo que ya había escrito.
+   */
+  function onPhoneChange(value: string) {
+    setPhone(value);
+    const p = useProfileStore.getState();
+    const digits = (s: string) => s.replace(/\D/g, "");
+    const match = !!p.phone && digits(value) === digits(p.phone);
+    setRecognized(match);
+    if (match) {
+      setName((v) => v || p.name);
+      setEmail((v) => v || p.email);
+    }
+  }
 
   const cartTotal = total();
 
@@ -136,11 +156,6 @@ export default function CheckoutPage() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Checkout</h1>
-        <p className="text-sm text-muted-foreground mt-1">Completa tu pedido</p>
-      </div>
-
       {/* Delivery method */}
       <section className="space-y-3">
         <h2 className="font-semibold">¿Cómo quieres recibirlo?</h2>
@@ -180,16 +195,8 @@ export default function CheckoutPage() {
       <section className="space-y-4">
         <h2 className="font-semibold">Tus datos</h2>
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Nombre *</Label>
-            <Input
-              id="name"
-              placeholder="Tu nombre"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
+          {/* El teléfono va primero: es con lo que el negocio identifica al
+              cliente, y si es el mismo de este dispositivo rellena el resto. */}
           <div className="space-y-1.5">
             <Label htmlFor="phone">Teléfono *</Label>
             <Input
@@ -197,7 +204,22 @@ export default function CheckoutPage() {
               type="tel"
               placeholder="8888-8888"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => onPhoneChange(e.target.value)}
+              required
+            />
+            {recognized && (
+              <p className="text-xs text-muted-foreground">
+                Datos guardados en este dispositivo.
+              </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Nombre *</Label>
+            <Input
+              id="name"
+              placeholder="Tu nombre"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
@@ -212,7 +234,9 @@ export default function CheckoutPage() {
               required
             />
             <p className="text-xs text-muted-foreground">
-              Para enviarte el comprobante de pago.
+              Ahí te llega el comprobante del pago con tarjeta y cualquier aviso
+              sobre una devolución. Lo pedimos una sola vez: la próxima ya viene
+              listo.
             </p>
           </div>
           {deliveryMethod === "DELIVERY" && (
