@@ -18,6 +18,16 @@ import { saveLastOrder } from "@/lib/last-order";
 
 type PaymentMethod = "CARD" | "CASH";
 
+/**
+ * El efectivo está construido de punta a punta pero apagado: exige verificar el
+ * número con un código de WhatsApp, y eso necesita el número real del negocio
+ * ligado a la cuenta de Meta (hoy hay uno de prueba, que no permite crear la
+ * plantilla del código).
+ *
+ * Se enciende con NEXT_PUBLIC_CASH_ENABLED=true. Ver docs/pagos-efectivo.md.
+ */
+const CASH_ENABLED = process.env.NEXT_PUBLIC_CASH_ENABLED === "true";
+
 /** Estado de la cotización del envío mientras el cliente mueve el pin. */
 type DeliveryQuoteState =
   | { status: "idle" }
@@ -360,6 +370,18 @@ export default function CheckoutPage() {
       {/* Payment method */}
       <section className="space-y-3">
         <h2 className="font-semibold">¿Cómo pagás?</h2>
+        {!CASH_ENABLED ? (
+          <div className="rounded-xl border bg-muted/40 p-4">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <CreditCard className="h-4 w-4 text-primary" />
+              Pago con tarjeta
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Por ahora solo aceptamos tarjeta. Estamos habilitando el pago en
+              efectivo al recibir.
+            </p>
+          </div>
+        ) : (
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
@@ -390,7 +412,8 @@ export default function CheckoutPage() {
             </span>
           </button>
         </div>
-        {paymentMethod === "CASH" && (
+        )}
+        {CASH_ENABLED && paymentMethod === "CASH" && (
           <p className="text-xs text-muted-foreground">
             Pagás todo al recibir, incluido el envío. Tené el monto listo para
             facilitarle el vuelto al mensajero.

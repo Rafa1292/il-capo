@@ -89,6 +89,15 @@ export async function POST(req: NextRequest) {
     // Efectivo: no hay cobro en línea, así que no hay referencia de pago que
     // verificar. La idempotencia se apoya en una referencia propia.
     const isCash = body.paymentMethod === "CASH";
+
+    // El interruptor tiene que estar acá y no solo en la pantalla: esconder un
+    // botón no impide que alguien llame al endpoint a mano.
+    if (isCash && process.env.NEXT_PUBLIC_CASH_ENABLED !== "true") {
+      return NextResponse.json(
+        { error: "El pago en efectivo no está disponible", code: "CASH_DISABLED" },
+        { status: 403 }
+      );
+    }
     if (isCash && !orderNumber) {
       orderNumber = `CASH-${crypto.randomUUID()}`;
     }
