@@ -1,12 +1,18 @@
-import { nicoGet } from "@/lib/nico";
+import { nicoGet, isBuildPrerender } from "@/lib/nico";
 import { PizzaBuilder } from "@/components/factory/pizza-builder";
 import type { PizzaBuilderData } from "@/types";
 
-// ⚠️ No atrapar errores: con ISR, si la revalidación falla Next sirve la última
-// versión buena. El error de primera carga lo maneja app/error.tsx.
+// ⚠️ No atrapar errores en runtime: con ISR, si la revalidación falla Next sirve
+// la última versión buena. El error de primera carga lo maneja app/error.tsx.
+// La única excepción es el prerender del build: ver isBuildPrerender().
 async function getPizzaBuilderData(): Promise<PizzaBuilderData | null> {
-  const json = await nicoGet<{ data: PizzaBuilderData }>("/api/public/pizza-builder");
-  return json.data ?? null;
+  try {
+    const json = await nicoGet<{ data: PizzaBuilderData }>("/api/public/pizza-builder");
+    return json.data ?? null;
+  } catch (err) {
+    if (isBuildPrerender()) return null;
+    throw err;
+  }
 }
 
 export const revalidate = 60;

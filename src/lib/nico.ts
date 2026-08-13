@@ -16,6 +16,19 @@ function isTimeout(err: unknown): boolean {
   return err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
 }
 
+/**
+ * `true` mientras Next prerenderiza las páginas ISR durante `next build`.
+ *
+ * Ahí nico puede no estar accesible (build local sin el server levantado, caída
+ * de un minuto, key todavía sin configurar en el proveedor). Si dejamos que el
+ * error se propague, el deploy entero de la web falla por un problema de otro
+ * sistema que quizá ya se resolvió. En runtime NO se usa: ahí sí queremos que
+ * el error se propague para que ISR siga sirviendo la última versión buena.
+ */
+export function isBuildPrerender(): boolean {
+  return process.env.NEXT_PHASE === "phase-production-build";
+}
+
 export async function nicoGet<T>(path: string): Promise<T> {
   let res: Response;
   try {

@@ -1,15 +1,21 @@
-import { nicoGet } from "@/lib/nico";
+import { nicoGet, isBuildPrerender } from "@/lib/nico";
 import { MenuItemCard } from "@/components/menu/menu-item-card";
 import { CategoryNav } from "@/components/menu/category-nav";
 import { DragScroller } from "@/components/ui/drag-scroller";
 import type { MenuCategory } from "@/types";
 
-// ⚠️ No atrapar errores aquí: con ISR, si la revalidación falla Next sigue
+// ⚠️ No atrapar errores en runtime: con ISR, si la revalidación falla Next sigue
 // sirviendo la última versión buena del menú. Atrapar y devolver [] cachearía
 // "menú no disponible" 60s para todos aunque nico vuelva en segundos.
+// La única excepción es el prerender del build: ver isBuildPrerender().
 async function getMenu(): Promise<MenuCategory[]> {
-  const json = await nicoGet<{ data: MenuCategory[] }>("/api/public/menu");
-  return json.data ?? [];
+  try {
+    const json = await nicoGet<{ data: MenuCategory[] }>("/api/public/menu");
+    return json.data ?? [];
+  } catch (err) {
+    if (isBuildPrerender()) return [];
+    throw err;
+  }
 }
 
 export const revalidate = 60;
