@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
+import { absoluteUrl } from "@/lib/site";
 
 interface Props {
   locations: { slug: string; name: string }[];
@@ -33,10 +34,14 @@ export function LocationPickerScreen({ locations }: Props) {
 
       <div className="space-y-3">
         <h1 className="text-2xl font-bold tracking-tight">il Capo Pizzería</h1>
+        {/* Nombra la app y enumera lo que hace. Google exige que la portada
+            "describa completamente la funcionalidad de la app": una frase de
+            marca ("pizza artesanal") no cuenta como descripción. */}
         <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-          Pizza artesanal en Grecia y San Ramón. Mirá la carta, armá tu pedido y
-          pagá en línea: te lo llevamos a domicilio o lo dejamos listo para
-          recoger.
+          il Capo Pizzería es la aplicación de pedidos en línea de nuestras
+          pizzerías en Grecia y San Ramón, Costa Rica. Acá podés ver la carta,
+          armar tu pizza, hacer el pedido y pagarlo con tarjeta, para que te lo
+          llevemos a domicilio o lo dejemos listo para recoger.
         </p>
       </div>
 
@@ -66,21 +71,41 @@ export function LocationPickerScreen({ locations }: Props) {
         </p>
       </div>
 
-      {/* Para qué sirve la cuenta. Google pide que la página principal diga qué
-          hace la app y por qué pide iniciar sesión; además le ahorra la duda al
-          cliente, que es quien de verdad se pregunta para qué le piden entrar. */}
-      <p className="mx-auto max-w-sm border-t border-border pt-6 text-xs text-muted-foreground">
-        Podés entrar con tu cuenta de Google o con tu correo para no volver a
-        escribir tus datos en cada pedido y seguir el estado de lo que pediste.
-      </p>
+      {/* Para qué sirve la cuenta y QUÉ datos se toman de ella.
+          Google no pide solo que digamos que hay login: pide explicar con
+          transparencia para qué se solicitan los datos del usuario. Decir
+          "podés entrar con Google" no cumple; hay que nombrar el dato y el uso.
+          Al cliente le sirve igual, que es quien se pregunta qué le van a ver. */}
+      <div className="mx-auto max-w-sm space-y-2 border-t border-border pt-6 text-xs text-muted-foreground">
+        <p>
+          Para pedir podés entrar con tu cuenta de Google o con tu correo. Solo
+          usamos tu <strong>nombre y tu correo electrónico</strong> para
+          identificarte, guardar tus datos de entrega y dejarte ver el estado de
+          tus pedidos. No accedemos a ninguna otra información de tu cuenta ni
+          la compartimos con terceros con fines publicitarios.
+        </p>
+      </div>
 
+      {/*
+        Absolutos y no relativos a propósito. Google compara el enlace de la
+        política de privacidad de esta página contra la URL configurada en la
+        pantalla de consentimiento, y lo hace como texto: un href="/privacidad"
+        no coincide con "https://www.ilcapopixa.com/privacidad" y la
+        verificación se rechaza sin decir por qué.
+      */}
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <Link href="/privacidad" className="underline underline-offset-2 hover:text-foreground">
-          Privacidad
-        </Link>
-        <Link href="/terminos" className="underline underline-offset-2 hover:text-foreground">
+        <a
+          href={absoluteUrl("/privacidad")}
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          Política de privacidad
+        </a>
+        <a
+          href={absoluteUrl("/terminos")}
+          className="underline underline-offset-2 hover:text-foreground"
+        >
           Términos y condiciones
-        </Link>
+        </a>
       </div>
     </div>
   );
