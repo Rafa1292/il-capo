@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Clock, Leaf, Wheat, Flame } from "lucide-react";
 import { SCHEDULE, formatMinutes } from "@/lib/schedule";
+import { absoluteUrl } from "@/lib/site";
 
 const KITCHEN = [
   {
@@ -58,17 +58,46 @@ export function AboutFooter() {
         </div>
       </section>
 
-      {/* Las legales van acá abajo y no en el menú de navegación: casi nadie las
-          busca, pero tienen que estar a un clic desde cualquier página —Google
-          las pide para publicar el login, y el cliente para saber qué se guarda
-          de él. */}
-      <section className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-6 text-xs text-muted-foreground">
-        <Link href="/privacidad" className="underline underline-offset-2 hover:text-foreground">
-          Privacidad
-        </Link>
-        <Link href="/terminos" className="underline underline-offset-2 hover:text-foreground">
-          Términos y condiciones
-        </Link>
+      {/*
+        Qué es esto y qué datos se usan de la cuenta.
+        Está repetido respecto del selector de sede a propósito: quien ya eligió
+        sede queda con una cookie y, a partir de ahí, entrar a la raíz lo trae
+        acá. Si esta información viviera solo en el selector, cualquiera con
+        cookie —incluido un revisor de Google después de un clic— vería una
+        carta de pizzas sin nada que explique la app ni el uso de sus datos.
+      */}
+      <section className="space-y-3 border-t border-border pt-6 text-xs text-muted-foreground">
+        <p>
+          <strong className="text-foreground">il Capo Pizzería</strong> es la
+          aplicación de pedidos en línea de nuestras pizzerías en Grecia y San
+          Ramón, Costa Rica. Acá podés ver la carta, armar tu pizza, hacer el
+          pedido y pagarlo con tarjeta, para que te lo llevemos a domicilio o lo
+          dejemos listo para recoger.
+        </p>
+        <p>
+          Para pedir podés entrar con tu cuenta de Google o con tu correo. Solo
+          usamos tu <strong>nombre y tu correo electrónico</strong> para
+          identificarte, guardar tus datos de entrega y dejarte ver el estado de
+          tus pedidos. No accedemos a ninguna otra información de tu cuenta ni la
+          compartimos con terceros con fines publicitarios.
+        </p>
+        {/* Absolutos: Google compara este enlace, como texto, contra la URL
+            configurada en la pantalla de consentimiento. Ver el mismo comentario
+            en location-picker-screen.tsx. */}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+          <a
+            href={absoluteUrl("/privacidad")}
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Política de privacidad
+          </a>
+          <a
+            href={absoluteUrl("/terminos")}
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Términos y condiciones
+          </a>
+        </div>
       </section>
     </div>
   );
