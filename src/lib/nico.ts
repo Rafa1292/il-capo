@@ -22,6 +22,37 @@ export class LocationRequiredError extends Error {
   }
 }
 
+/**
+ * Un rechazo de nico, con su código.
+ *
+ * Existe porque nico responde `{ success:false, error:{ message, code } }` —el
+ * error es un OBJETO— y acá se hacía `new Error(body.error)`, que produce
+ * literalmente "[object Object]". El motivo del rechazo se perdía siempre: ni
+ * en los logs ni para decidir qué mostrarle al cliente. Con el código a mano se
+ * puede distinguir "fuera de cobertura" de "pedidos pausados" de un fallo real.
+ */
+export class NicoApiError extends Error {
+  constructor(
+    message: string,
+    readonly code: string | null,
+    readonly status: number
+  ) {
+    super(message);
+    this.name = "NicoApiError";
+  }
+}
+
+async function nicoError(res: Response, path: string): Promise<NicoApiError> {
+  const body = await res.json().catch(() => null);
+  const err = body?.error;
+  // Tolera las dos formas: el envoltorio de nico ({error:{message,code}}) y un
+  // error plano en texto, por si algún handler responde distinto.
+  const message =
+    (typeof err === "string" ? err : err?.message) ?? `Nico API error ${res.status} (${path})`;
+  const code = typeof err === "object" && err !== null ? (err.code ?? null) : null;
+  return new NicoApiError(message, code, res.status);
+}
+
 function keyOf(ref: LocationRef): string {
   const location = typeof ref === "object" && ref !== null ? ref : resolveLocation(ref);
   if (!location) throw new LocationRequiredError();
@@ -83,10 +114,7 @@ export async function nicoGet<T>(path: string, opts?: GetOptions): Promise<T> {
     if (err instanceof LocationRequiredError) throw err;
     throw new Error(isTimeout(err) ? "Nico API timeout" : `Nico API no disponible (${path})`);
   }
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.error ?? `Nico API error ${res.status}`);
-  }
+  if (!res.ok) throw await nicoError(res, path);
   return res.json();
 }
 
@@ -108,10 +136,7 @@ async function nicoWrite<T>(
     if (err instanceof LocationRequiredError) throw err;
     throw new Error(isTimeout(err) ? "Nico API timeout" : `Nico API no disponible (${path})`);
   }
-  if (!res.ok) {
-    const errBody = await res.json().catch(() => ({}));
-    throw new Error(errBody?.error ?? `Nico API error ${res.status}`);
-  }
+  if (!res.ok) throw await nicoError(res, path);
   return res.json();
 }
 

@@ -5,6 +5,7 @@ import { priceCart, PricingError, type PriceableItem } from "@/lib/pricing";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { requireLocation } from "@/lib/api-location";
 import { resolveDeliveryFee, OutOfRangeError } from "@/lib/delivery";
+import { getStoreStatus } from "@/lib/store-status";
 
 interface CreateBody {
   items: PriceableItem[];
@@ -62,6 +63,22 @@ export async function POST(req: NextRequest) {
     // no hay a quién preguntarle.
     const { location: sede, response } = await requireLocation();
     if (response) return response;
+
+    // Antes de autorizar nada. Si la sede tiene los pedidos pausados, nico va a
+    // rechazar el pedido más adelante — pero para entonces la tarjeta ya estaría
+    // autorizada y la plata del cliente retenida, sin ningún pedido al que
+    // enganchar el reverso. Frenar acá es la diferencia entre un aviso y un
+    // cobro fantasma.
+    const status = await getStoreStatus(sede);
+    if (!status.ordersEnabled) {
+      return NextResponse.json(
+        {
+          error: status.pausedNote ?? "Por ahora no estamos recibiendo pedidos",
+          code: "ORDERS_PAUSED",
+        },
+        { status: 503 }
+      );
+    }
 
     // 🔒 Monto autoritativo: se recalcula en el servidor con precios reales de nico.
     // NUNCA se confía en un monto enviado por el cliente.

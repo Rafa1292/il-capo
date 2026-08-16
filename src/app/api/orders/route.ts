@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nicoPost } from "@/lib/nico";
+import { nicoPost, NicoApiError } from "@/lib/nico";
 import { resolveDeliveryFee, OutOfRangeError } from "@/lib/delivery";
 import { getCatalog } from "@/lib/catalog";
 import {
@@ -264,6 +264,20 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (err instanceof PricingError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    // nico rechazó con un motivo concreto (pedidos pausados, fuera de
+    // cobertura, precio que no cuadra). Devolverlo tal cual en vez de un 500
+    // genérico: el cliente puede hacer algo con "volvemos a las 11", con
+    // "no se pudo registrar el pedido" no.
+    if (err instanceof NicoApiError) {
+      // Con tarjeta el pago ya está autorizado en este punto: dejarlo en el log
+      // con su orderNumber es lo único que permite encontrar la retención
+      // después y liberarla.
+      console.error(`[orders] nico rechazó ${err.code} orderNumber=${orderNumber}: ${err.message}`);
+      return NextResponse.json(
+        { error: err.message, code: err.code },
+        { status: err.status === 503 ? 503 : 409 }
+      );
     }
     console.error("[orders]", err);
     return NextResponse.json({ error: "No se pudo registrar el pedido" }, { status: 500 });

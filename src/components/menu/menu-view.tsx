@@ -6,7 +6,9 @@ import { CategoryNav } from "@/components/menu/category-nav";
 import { OpeningStatus } from "@/components/menu/opening-status";
 import { AboutFooter } from "@/components/menu/about-footer";
 import { DragScroller } from "@/components/ui/drag-scroller";
+import { PausedBanner } from "@/components/menu/paused-banner";
 import { locationInfo } from "@/lib/business";
+import { getStoreStatus } from "@/lib/store-status";
 import type { Location } from "@/lib/locations";
 import type { MenuCategory } from "@/types";
 
@@ -40,7 +42,12 @@ interface Props {
  * propia entrada de caché.
  */
 export async function MenuView({ location, showLocationName }: Props) {
-  const categories = await getMenu(location);
+  // En paralelo: el estado no depende de la carta y esperarlo en serie le
+  // agregaría su latencia a la primera pintura de la página.
+  const [categories, status] = await Promise.all([
+    getMenu(location),
+    getStoreStatus(location),
+  ]);
 
   const info = locationInfo(location.slug);
   const donde = info?.locality ?? location.name;
@@ -85,6 +92,8 @@ export async function MenuView({ location, showLocationName }: Props) {
         </div>
         <OpeningStatus />
       </div>
+
+      <PausedBanner status={status} />
 
       {categories.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
