@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Clock, Leaf, Wheat, Flame } from "lucide-react";
 import { SCHEDULE, formatMinutes } from "@/lib/schedule";
 
@@ -55,6 +56,19 @@ export function AboutFooter() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Las legales van acá abajo y no en el menú de navegación: casi nadie las
+          busca, pero tienen que estar a un clic desde cualquier página —Google
+          las pide para publicar el login, y el cliente para saber qué se guarda
+          de él. */}
+      <section className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-6 text-xs text-muted-foreground">
+        <Link href="/privacidad" className="underline underline-offset-2 hover:text-foreground">
+          Privacidad
+        </Link>
+        <Link href="/terminos" className="underline underline-offset-2 hover:text-foreground">
+          Términos y condiciones
+        </Link>
       </section>
     </div>
   );
