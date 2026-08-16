@@ -6,6 +6,7 @@ import { CategoryNav } from "@/components/menu/category-nav";
 import { OpeningStatus } from "@/components/menu/opening-status";
 import { AboutFooter } from "@/components/menu/about-footer";
 import { DragScroller } from "@/components/ui/drag-scroller";
+import { locationInfo } from "@/lib/business";
 import type { Location } from "@/lib/locations";
 import type { MenuCategory } from "@/types";
 
@@ -41,8 +42,21 @@ interface Props {
 export async function MenuView({ location, showLocationName }: Props) {
   const categories = await getMenu(location);
 
+  const info = locationInfo(location.slug);
+  const donde = info?.locality ?? location.name;
+
   return (
     <div>
+      {/*
+        La página no tenía encabezado: arrancaba directo en el <h2> de cada
+        categoría, así que ni un buscador ni un lector de pantalla sabían de qué
+        trataba. Va oculto a la vista porque el diseño de la cabecera es el
+        logo; el texto es el mismo que describe la página, no es relleno.
+      */}
+      <h1 className="sr-only">
+        il Capo Pizzería en {donde} — carta y pedidos en línea
+      </h1>
+
       {/* Cabecera — logo y si están abiertos ahora mismo */}
       <div className="flex items-center justify-between gap-4 pb-6">
         <div className="flex items-center gap-3">
