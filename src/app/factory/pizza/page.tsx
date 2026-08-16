@@ -1,26 +1,40 @@
-import { nicoGet, isBuildPrerender } from "@/lib/nico";
+import { redirect } from "next/navigation";
+import { nicoGet } from "@/lib/nico";
+import { currentLocation } from "@/lib/current-location";
 import { PizzaBuilder } from "@/components/factory/pizza-builder";
+import type { Location } from "@/lib/locations";
 import type { PizzaBuilderData } from "@/types";
 
-// ⚠️ No atrapar errores en runtime: con ISR, si la revalidación falla Next sirve
-// la última versión buena. El error de primera carga lo maneja app/error.tsx.
-// La única excepción es el prerender del build: ver isBuildPrerender().
-async function getPizzaBuilderData(): Promise<PizzaBuilderData | null> {
-  try {
-    const json = await nicoGet<{ data: PizzaBuilderData }>("/api/public/pizza-builder", {
-      revalidate: 60,
-    });
-    return json.data ?? null;
-  } catch (err) {
-    if (isBuildPrerender()) return null;
-    throw err;
-  }
+/**
+ * Depende de la cookie de sede: cada sucursal es un tenant distinto en nico y
+ * tiene sus propios tamaños, masas, salsas y toppings. Por eso es dinámica,
+ * igual que `/api/pizza-builder`.
+ *
+ * Antes era estática con ISR y pedía los datos SIN indicar la sede. Con una
+ * sola configurada `resolveLocation()` la adivinaba y funcionaba; al abrir la
+ * segunda dejó de haber una respuesta obvia, la llamada empezó a lanzar
+ * `LocationRequiredError` y la página quedó congelada en "no disponible".
+ */
+export const dynamic = "force-dynamic";
+
+async function getPizzaBuilderData(location: Location): Promise<PizzaBuilderData | null> {
+  // Sin atrapar el error a propósito: si nico se cae, que lo muestre
+  // `app/error.tsx` con su botón de reintentar, en vez de decirle al cliente
+  // que el armador "no existe" y que se vaya.
+  const json = await nicoGet<{ data: PizzaBuilderData }>("/api/public/pizza-builder", {
+    revalidate: 60,
+    location,
+  });
+  return json.data ?? null;
 }
 
-export const revalidate = 60;
-
 export default async function PizzaBuilderPage() {
-  const data = await getPizzaBuilderData();
+  // Sin sede no hay nada que armar: los tamaños y los precios son de un tenant
+  // concreto. La portada es la que pregunta cuál.
+  const location = await currentLocation();
+  if (!location) redirect("/");
+
+  const data = await getPizzaBuilderData(location);
 
   if (!data) {
     return (
