@@ -2,6 +2,7 @@ import { contactPhone, CUISINE, locationInfo, PRICE_RANGE } from "@/lib/business
 import { WHATSAPP_URL } from "@/lib/contact";
 import { absoluteUrl, openingHoursSpecification, SITE_NAME, SITE_URL } from "@/lib/site";
 import type { Location } from "@/lib/locations";
+import type { Schedule } from "@/lib/schedule";
 
 /**
  * Datos estructurados (JSON-LD).
@@ -11,8 +12,9 @@ import type { Location } from "@/lib/locations";
  * lateral, el "abierto ahora" y aparecer en "pizza cerca de mí". Sin esto el
  * buscador solo ve texto suelto.
  *
- * El horario sale de `SCHEDULE`, el mismo que pinta el pie de la carta, así que
- * lo que declaramos y lo que ve el cliente no pueden divergir.
+ * El horario es el mismo que pinta el pie de la carta —una sola consulta a
+ * nico, compartida— así que lo que declaramos y lo que ve el cliente no pueden
+ * divergir.
  */
 
 function JsonLd({ data }: { data: object }) {
@@ -29,7 +31,13 @@ function JsonLd({ data }: { data: object }) {
 }
 
 /** Ficha del local: una por sede. */
-export function RestaurantJsonLd({ location }: { location: Location }) {
+export function RestaurantJsonLd({
+  location,
+  schedule,
+}: {
+  location: Location;
+  schedule: Schedule;
+}) {
   const info = locationInfo(location.slug);
   // Una sede sin datos físicos cargados no publica ficha: un `Restaurant` sin
   // dirección no sirve para nada y Google lo marca como incompleto.
@@ -64,7 +72,7 @@ export function RestaurantJsonLd({ location }: { location: Location }) {
           longitude: info.longitude,
         },
         hasMap: `https://www.google.com/maps/search/?api=1&query=${info.latitude},${info.longitude}`,
-        openingHoursSpecification: openingHoursSpecification(),
+        openingHoursSpecification: openingHoursSpecification(schedule),
         // Lo que de verdad ofrece la página: pedir. Habilita el botón de pedido
         // en los resultados de Google.
         potentialAction: {

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MenuView } from "@/components/menu/menu-view";
 import { RememberLocation } from "@/components/menu/remember-location";
-import { RestaurantJsonLd } from "@/components/seo/json-ld";
 import { locationInfo } from "@/lib/business";
 import { findLocation, getLocations, hasMultipleLocations } from "@/lib/locations";
 
@@ -81,7 +80,8 @@ export default async function SedePage({ params }: { params: Promise<{ sede: str
       {/* Entrar por la URL de una sede la deja elegida para el resto del flujo
           (carrito, checkout, pedido), que no lleva la sede en la dirección. */}
       <RememberLocation slug={location.slug} />
-      <RestaurantJsonLd location={location} />
+      {/* La ficha JSON-LD la arma MenuView: necesita el horario que publica la
+          sede y no tiene sentido pedirlo dos veces. */}
       <MenuView location={location} showLocationName={hasMultipleLocations()} />
     </>
   );

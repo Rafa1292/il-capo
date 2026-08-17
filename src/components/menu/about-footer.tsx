@@ -1,5 +1,5 @@
 import { Clock, Leaf, Wheat, Flame } from "lucide-react";
-import { SCHEDULE, formatMinutes } from "@/lib/schedule";
+import { formatMinutes, scheduleBlocks, type Schedule } from "@/lib/schedule";
 import { absoluteUrl } from "@/lib/site";
 
 const KITCHEN = [
@@ -21,7 +21,10 @@ const KITCHEN = [
 ];
 
 /** Cierre de la portada: quiénes somos y el horario completo, debajo de la carta. */
-export function AboutFooter() {
+export function AboutFooter({ schedule }: { schedule: Schedule }) {
+  // Días seguidos con la misma hora se muestran juntos: "Lunes – Jueves".
+  const blocks = scheduleBlocks(schedule);
+
   return (
     <div className="mt-14 space-y-10 border-t border-border pt-10">
       <section className="space-y-5">
@@ -47,11 +50,13 @@ export function AboutFooter() {
           Horario
         </p>
         <div className="space-y-3 text-sm">
-          {SCHEDULE.map((block) => (
+          {blocks.map((block) => (
             <div key={block.label} className="flex justify-between">
               <span className="text-muted-foreground">{block.label}</span>
               <span className="font-medium tabular-nums">
-                {formatMinutes(block.open)} – {formatMinutes(block.close)}
+                {block.open === null || block.close === null
+                  ? "Cerrado"
+                  : `${formatMinutes(block.open)} – ${formatMinutes(block.close)}`}
               </span>
             </div>
           ))}

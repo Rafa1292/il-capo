@@ -7,6 +7,7 @@ import { OpeningStatus } from "@/components/menu/opening-status";
 import { AboutFooter } from "@/components/menu/about-footer";
 import { DragScroller } from "@/components/ui/drag-scroller";
 import { PausedBanner } from "@/components/menu/paused-banner";
+import { RestaurantJsonLd } from "@/components/seo/json-ld";
 import { locationInfo } from "@/lib/business";
 import { getStoreStatus } from "@/lib/store-status";
 import type { Location } from "@/lib/locations";
@@ -54,6 +55,11 @@ export async function MenuView({ location, showLocationName }: Props) {
 
   return (
     <div>
+      {/* La ficha de Google se arma acá, con el mismo horario que se pinta
+          abajo: si viviera en la página serían dos consultas y podrían quedar
+          diciendo cosas distintas. */}
+      <RestaurantJsonLd location={location} schedule={status.schedule} />
+
       {/*
         La página no tenía encabezado: arrancaba directo en el <h2> de cada
         categoría, así que ni un buscador ni un lector de pantalla sabían de qué
@@ -90,7 +96,7 @@ export async function MenuView({ location, showLocationName }: Props) {
             </Link>
           )}
         </div>
-        <OpeningStatus />
+        <OpeningStatus schedule={status.schedule} />
       </div>
 
       <PausedBanner status={status} />
@@ -142,7 +148,7 @@ export async function MenuView({ location, showLocationName }: Props) {
         </>
       )}
 
-      <AboutFooter />
+      <AboutFooter schedule={status.schedule} />
     </div>
   );
 }

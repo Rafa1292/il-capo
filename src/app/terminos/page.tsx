@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage, List, P, Section } from "@/components/legal/legal-page";
 import { LEGAL_UPDATED, CONTACT_LINE } from "@/lib/legal";
-import { SCHEDULE, formatMinutes } from "@/lib/schedule";
 
 export const metadata: Metadata = {
   title: "Términos y condiciones",
@@ -87,18 +86,19 @@ export default function TerminosPage() {
       </Section>
 
       <Section title="Horario">
+        {/* El horario ya no se copia acá: cada sede publica el suyo y puede
+            cambiarlo cuando quiera, así que una tabla en esta página quedaría
+            desactualizada sin que nadie se diera cuenta. */}
         <P>
-          Se reciben pedidos dentro del horario de atención. Fuera de él el sitio
-          te deja ver la carta, pero no procesa pedidos.
+          Cada local tiene su propio horario de atención y lo publica en su
+          página: lo vas a ver en la cabecera de la carta y en el pie.
         </P>
-        <List
-          items={SCHEDULE.map((b) => (
-            <>
-              <strong>{b.label}:</strong> {formatMinutes(b.open)} a{" "}
-              {formatMinutes(b.close)}
-            </>
-          ))}
-        />
+        <P>
+          El local puede pausar los pedidos en línea en cualquier momento, por
+          ejemplo por un imprevisto de cocina. Cuando eso pasa te lo avisamos en
+          la página y no se puede completar el pedido, aunque la carta se siga
+          viendo.
+        </P>
         <P>
           Los tiempos de entrega que mostramos son estimados y dependen de la
           carga de la cocina y del tránsito.
