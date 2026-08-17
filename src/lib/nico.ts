@@ -10,11 +10,17 @@ const NICO_TIMEOUT_MS = 8_000;
  * Sede con la que hablar. Cada una es un tenant distinto en nico y tiene su
  * propia clave, así que sin sede no hay a quién preguntarle.
  *
- * Se acepta el slug o la sede ya resuelta. Omitirlo solo sirve cuando hay una
- * sola configurada — con varias, no elegir sería servirle a un cliente la carta
- * y los precios de la sede equivocada.
+ * Se acepta el slug o la sede ya resuelta, pero NO se puede omitir. Antes era
+ * opcional y caía sola a "la única sede configurada": cómodo con una, una
+ * trampa con dos. Un POST de pedido que la omitió pasó desapercibido hasta que
+ * hubo dos sedes, y entonces reventó DESPUÉS de cobrarle al cliente — la
+ * tarjeta autorizada y el pedido sin registrar. Que sea obligatoria hace que el
+ * compilador encuentre el olvido en vez de la caja.
+ *
+ * Quien no la tenga a mano la resuelve antes con `requireLocation()` o
+ * `currentLocation()`, que son los que saben caer a la sede única.
  */
-export type LocationRef = Location | string | null | undefined;
+export type LocationRef = Location | string;
 
 export class LocationRequiredError extends Error {
   constructor() {
@@ -54,7 +60,9 @@ async function nicoError(res: Response, path: string): Promise<NicoApiError> {
 }
 
 function keyOf(ref: LocationRef): string {
-  const location = typeof ref === "object" && ref !== null ? ref : resolveLocation(ref);
+  // Un slug todavía puede no existir (cookie vieja, sede retirada del JSON),
+  // así que la comprobación en runtime se queda.
+  const location = typeof ref === "object" ? ref : resolveLocation(ref);
   if (!location) throw new LocationRequiredError();
   return location.apiKey;
 }
@@ -94,19 +102,20 @@ interface GetOptions {
    * ahí un dato viejo es plata mal cobrada o un estado equivocado.
    */
   revalidate?: number;
-  location?: LocationRef;
+  /** Obligatoria: ver LocationRef. */
+  location: LocationRef;
 }
 
-export async function nicoGet<T>(path: string, opts?: GetOptions): Promise<T> {
+export async function nicoGet<T>(path: string, opts: GetOptions): Promise<T> {
   const caching =
-    opts?.revalidate === undefined
+    opts.revalidate === undefined
       ? ({ cache: "no-store" } as const)
       : ({ next: { revalidate: opts.revalidate } } as const);
 
   let res: Response;
   try {
     res = await fetch(`${NICO_API_URL}${path}`, {
-      headers: nicoHeaders(opts?.location),
+      headers: nicoHeaders(opts.location),
       ...caching,
       signal: AbortSignal.timeout(NICO_TIMEOUT_MS),
     });
@@ -122,7 +131,7 @@ async function nicoWrite<T>(
   method: "POST" | "PUT",
   path: string,
   body: unknown,
-  location?: LocationRef
+  location: LocationRef
 ): Promise<T> {
   let res: Response;
   try {
@@ -143,7 +152,7 @@ async function nicoWrite<T>(
 export async function nicoPut<T>(
   path: string,
   body: unknown,
-  location?: LocationRef
+  location: LocationRef
 ): Promise<T> {
   return nicoWrite<T>("PUT", path, body, location);
 }
@@ -151,7 +160,7 @@ export async function nicoPut<T>(
 export async function nicoPost<T>(
   path: string,
   body: unknown,
-  location?: LocationRef
+  location: LocationRef
 ): Promise<T> {
   return nicoWrite<T>("POST", path, body, location);
 }

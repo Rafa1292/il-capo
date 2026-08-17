@@ -250,7 +250,8 @@ export async function POST(req: NextRequest) {
 
     const data = await nicoPost<{ success?: boolean; data?: { id?: string } }>(
       "/api/public/orders",
-      payload
+      payload,
+      sede
     );
 
     // Token de acceso al pedido: solo con él se puede consultar el estado (cierra IDOR).
@@ -279,7 +280,11 @@ export async function POST(req: NextRequest) {
         { status: err.status === 503 ? 503 : 409 }
       );
     }
-    console.error("[orders]", err);
+    // Con el orderNumber SIEMPRE: si se llegó hasta acá el pago ya está
+    // autorizado, y sin esa referencia en el log no hay forma de encontrar la
+    // retención después para capturarla o liberarla. Este era el camino que
+    // dejaba plata retenida sin dejar rastro de cuál.
+    console.error(`[orders] fallo inesperado orderNumber=${orderNumber}:`, err);
     return NextResponse.json({ error: "No se pudo registrar el pedido" }, { status: 500 });
   } finally {
     if (orderNumber) inFlight.delete(orderNumber);
