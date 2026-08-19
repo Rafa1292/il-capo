@@ -18,6 +18,8 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { signOrderId } from "@/lib/order-token";
 import { isPhoneVerifiedHere } from "@/lib/cash-verification";
 import { requireLocation } from "@/lib/api-location";
+import { reportIncident } from "@/lib/report-incident";
+import type { Location } from "@/lib/locations";
 import type { PizzaBuilderCartSelection } from "@/types";
 
 // Idempotencia best-effort dentro del proceso. La dedupe autoritativa (persistente)
@@ -75,6 +77,28 @@ function clip(s: string | undefined, max: number): string | undefined {
 // pagado coincida con el total recalculado en el servidor con precios reales.
 export async function POST(req: NextRequest) {
   let orderNumber = "";
+  // Fuera del try: los necesita el catch para poder reportar el cobro huérfano.
+  // Sin la sede no hay a quién reportarle, y sin el pago confirmado no hay nada
+  // que reportar — un fallo antes de autorizar no le cuesta nada a nadie.
+  let sede: Location | null = null;
+  let approved: { amount: number; auth: string } | null = null;
+
+  /** Avisa a nico que hay plata retenida sin pedido. Solo si de verdad la hay. */
+  const reportOrphan = (stage: "VERIFY" | "REGISTER", reason: string) => {
+    if (!sede || !approved) return;
+    reportIncident(sede, {
+      orderNumber,
+      amount: approved.amount,
+      currency: TILOPAY_CURRENCY,
+      authCode: approved.auth,
+      stage,
+      reason,
+      customerName: clip(bodyRef?.customerName, 120),
+      customerPhone: clip(bodyRef?.customerPhone, 40),
+    });
+  };
+  let bodyRef: ConfirmBody | null = null;
+
   try {
     const rl = rateLimit(`orders:${clientIp(req)}`, 15, 60_000);
     if (!rl.ok) {
@@ -85,6 +109,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = (await req.json()) as ConfirmBody;
+    bodyRef = body;
     orderNumber = body.orderNumber?.trim();
 
     // Efectivo: no hay cobro en línea, así que no hay referencia de pago que
@@ -127,8 +152,9 @@ export async function POST(req: NextRequest) {
     inFlight.add(orderNumber);
 
     // Sede: define el catálogo, los precios y las zonas de entrega.
-    const { location: sede, response } = await requireLocation();
+    const { location, response } = await requireLocation();
     if (response) return response;
+    sede = location;
 
     // ── Recalcular precios con el catálogo real y sanear los ítems ──
     const catalog = await getCatalog(sede);
@@ -204,7 +230,12 @@ export async function POST(req: NextRequest) {
       if (!tx || tx.code !== "1") {
         return NextResponse.json({ error: "El pago no está aprobado" }, { status: 402 });
       }
+      // Desde acá hay plata retenida: cualquier salida que no termine en pedido
+      // deja al cliente cobrado y sin nada.
+      approved = { amount: Number(tx.amount), auth: tx.auth };
+
       if (tx.currency !== TILOPAY_CURRENCY) {
+        reportOrphan("REGISTER", `Moneda del cobro (${tx.currency}) distinta de ${TILOPAY_CURRENCY}`);
         return NextResponse.json({ error: "Moneda del pago no coincide" }, { status: 409 });
       }
       // 🔒 El monto pagado DEBE coincidir con el total recalculado en el servidor.
@@ -212,6 +243,7 @@ export async function POST(req: NextRequest) {
         console.error(
           `[orders] Monto no coincide orderNumber=${orderNumber} pagado=${tx.amount} total=${total}`
         );
+        reportOrphan("REGISTER", `Se cobró ${tx.amount} y el pedido suma ${total}`);
         return NextResponse.json({ error: "El monto pagado no coincide con el pedido" }, { status: 409 });
       }
     }
@@ -275,6 +307,7 @@ export async function POST(req: NextRequest) {
       // con su orderNumber es lo único que permite encontrar la retención
       // después y liberarla.
       console.error(`[orders] nico rechazó ${err.code} orderNumber=${orderNumber}: ${err.message}`);
+      reportOrphan("REGISTER", `nico rechazó el pedido (${err.code ?? err.status}): ${err.message}`);
       return NextResponse.json(
         { error: err.message, code: err.code },
         { status: err.status === 503 ? 503 : 409 }
@@ -285,6 +318,10 @@ export async function POST(req: NextRequest) {
     // retención después para capturarla o liberarla. Este era el camino que
     // dejaba plata retenida sin dejar rastro de cuál.
     console.error(`[orders] fallo inesperado orderNumber=${orderNumber}:`, err);
+    reportOrphan(
+      "REGISTER",
+      err instanceof Error ? err.message : "Fallo inesperado al registrar el pedido"
+    );
     return NextResponse.json({ error: "No se pudo registrar el pedido" }, { status: 500 });
   } finally {
     if (orderNumber) inFlight.delete(orderNumber);
