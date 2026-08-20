@@ -7,6 +7,7 @@ import { OpeningStatus } from "@/components/menu/opening-status";
 import { AboutFooter } from "@/components/menu/about-footer";
 import { DragScroller } from "@/components/ui/drag-scroller";
 import { PausedBanner } from "@/components/menu/paused-banner";
+import { TrackVisit } from "@/components/menu/track-visit";
 import { RestaurantJsonLd } from "@/components/seo/json-ld";
 import { locationInfo } from "@/lib/business";
 import { getStoreStatus } from "@/lib/store-status";
@@ -59,6 +60,7 @@ export async function MenuView({ location, showLocationName }: Props) {
           abajo: si viviera en la página serían dos consultas y podrían quedar
           diciendo cosas distintas. */}
       <RestaurantJsonLd location={location} schedule={status.schedule} />
+      <TrackVisit />
 
       {/*
         La página no tenía encabezado: arrancaba directo en el <h2> de cada

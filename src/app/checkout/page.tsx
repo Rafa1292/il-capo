@@ -15,6 +15,7 @@ import { CashVerification } from "@/components/checkout/cash-verification";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { saveLastOrder } from "@/lib/last-order";
+import { track } from "@/lib/track";
 
 type PaymentMethod = "CARD" | "CASH";
 
@@ -76,6 +77,12 @@ export default function CheckoutPage() {
       .then((r) => r.json())
       .then((j) => setVerifiedPhone(j?.phone ?? null))
       .catch(() => {});
+  }, []);
+
+  // Último paso del embudo antes del pago. Comparado contra los pedidos que
+  // sí entraron, es lo que dice cuánta gente se cae en la pantalla de pagar.
+  useEffect(() => {
+    track("CHECKOUT", { once: true });
   }, []);
 
   const digitsOnly = (s: string) => s.replace(/\D/g, "");

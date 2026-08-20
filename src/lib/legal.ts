@@ -6,7 +6,7 @@
  * "última actualización" es justamente el dato que se olvida.
  */
 
-export const LEGAL_UPDATED = "16 de agosto de 2026";
+export const LEGAL_UPDATED = "19 de agosto de 2026";
 
 export const CONTACT_LINE =
   "Podés escribirnos por WhatsApp al 7051 9920 o llamar al 2444 3001.";

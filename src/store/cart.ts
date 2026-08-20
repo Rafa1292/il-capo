@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { track } from "@/lib/track";
 import type { CartItem, CartModifierGroup, DeliveryMethod } from "@/types";
 
 // Contador para garantizar cartId únicos aunque se agreguen varias líneas en el mismo ms
@@ -60,13 +61,17 @@ export const useCartStore = create<CartStore>()(
       notes: "",
       cartOpen: false,
 
-      addItem: (item) =>
+      addItem: (item) => {
+        // Solo el primer agregado de la sesión: lo que mide el embudo es
+        // cuánta gente llega a armar un carrito, no cuántas líneas le mete.
+        track("CART_ADD", { once: true });
         set((s) => ({
           items: [
             ...s.items,
             { ...item, cartId: `${item.saleItemId}-${Date.now()}-${cartSeq++}` },
           ],
-        })),
+        }));
+      },
 
       removeItem: (cartId) =>
         set((s) => ({ items: s.items.filter((i) => i.cartId !== cartId) })),

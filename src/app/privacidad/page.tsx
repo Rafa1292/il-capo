@@ -90,10 +90,27 @@ export default function PrivacidadPage() {
         />
       </Section>
 
+      <Section title="Cómo medimos las visitas">
+        <P>
+          Contamos cuánta gente entra al sitio, pero{" "}
+          <strong>sin guardar nada tuyo</strong>. No hay analítica de terceros ni
+          píxeles de seguimiento: la medición es nuestra y se limita a sumar uno
+          a un contador diario.
+        </P>
+        <List
+          items={[
+            "No se guarda tu IP, ni un identificador, ni nada que permita reconocerte después.",
+            "No se usan cookies para medir. Solo una marca temporal en el navegador para no contarte dos veces en la misma visita, que se borra al cerrar la pestaña.",
+            "De dónde llegaste se reduce a una categoría (Google, Facebook, directo). Nunca se guarda la dirección completa.",
+            "Lo que queda es un número por día y por local: cuántos entraron, cuántos armaron un carrito, cuántos pidieron.",
+          ]}
+        />
+      </Section>
+
       <Section title="Lo que no hacemos">
         <List
           items={[
-            "No usamos analítica ni píxeles de seguimiento. El sitio no tiene ninguno instalado.",
+            "No usamos analítica de terceros ni píxeles de seguimiento (Google Analytics, Meta Pixel y similares). El sitio no tiene ninguno instalado.",
             "No vendemos ni cedemos tus datos a terceros con fines comerciales.",
             "No armamos perfiles de consumo ni publicidad dirigida.",
             "No te mandamos correos promocionales por haber hecho un pedido.",
@@ -104,7 +121,8 @@ export default function PrivacidadPage() {
       <Section title="Cookies">
         <P>
           Todas son necesarias para que el sitio funcione. No hay cookies de
-          publicidad ni de medición.
+          publicidad ni de medición: el conteo de visitas no usa cookies (ver
+          arriba).
         </P>
         <Table
           head={["Cookie", "Para qué", "Cuánto dura"]}
