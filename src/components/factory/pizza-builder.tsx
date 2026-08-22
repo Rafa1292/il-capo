@@ -3,9 +3,10 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Check, Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { squareImage } from "@/lib/cloudinary-image";
 import { useCartStore } from "@/store/cart";
 import type {
   PizzaBuilderData,
@@ -364,19 +365,21 @@ function ToppingCard({
         onClick={onAdd}
         disabled={atMax}
         aria-label={`Agregar ${topping.name}`}
-        className={cn(
-          "w-full overflow-hidden rounded-xl border-2 text-center transition-all",
-          "active:scale-95 disabled:active:scale-100",
-          count > 0 ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-        )}
+        className="w-full text-center transition active:scale-95 disabled:active:scale-100"
       >
-        <div className="relative aspect-square bg-muted">
+        <div className="relative aspect-square">
           {topping.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={topping.imageUrl}
+              src={squareImage(topping.imageUrl)}
               alt={topping.name}
-              className="h-full w-full object-cover"
+              className={cn(
+                "h-full w-full object-contain transition-transform duration-200",
+                count > 0 && "scale-110 drop-shadow-lg",
+                // Al tope, tocar ya no hace nada: atenuarlo lo dice sin agregar
+                // un cartel ni un botón más.
+                atMax && "opacity-50"
+              )}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-5xl">
@@ -385,29 +388,25 @@ function ToppingCard({
           )}
 
           {count > 0 && (
-            <span className="absolute right-1.5 top-1.5 flex h-7 min-w-[1.75rem] items-center justify-center rounded-full bg-primary px-1.5 text-sm font-bold text-primary-foreground shadow">
+            <span className="absolute right-0 top-0 flex h-7 min-w-[1.75rem] items-center justify-center rounded-full bg-primary px-1.5 text-sm font-bold text-primary-foreground shadow-md">
               {count}
             </span>
           )}
-
-          <span
-            className={cn(
-              "absolute bottom-1.5 right-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-background/90 shadow",
-              atMax && "opacity-40"
-            )}
-          >
-            <Plus className="h-4 w-4" />
-          </span>
         </div>
 
-        <div className="px-2 py-2">
-          <p className="text-sm font-semibold leading-tight">{topping.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {topping.pricePerUnit > 0
-              ? `₡${topping.pricePerUnit.toLocaleString("es-CR")} / u.`
-              : "Incluido"}
-          </p>
-        </div>
+        <p
+          className={cn(
+            "text-sm font-semibold leading-tight",
+            count > 0 ? "text-primary" : "text-foreground"
+          )}
+        >
+          {topping.name}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {topping.pricePerUnit > 0
+            ? `₡${topping.pricePerUnit.toLocaleString("es-CR")} / u.`
+            : "Incluido"}
+        </p>
       </button>
 
       {count > 0 && (
@@ -415,7 +414,7 @@ function ToppingCard({
           type="button"
           onClick={onRemove}
           aria-label={`Quitar una porción de ${topping.name}`}
-          className="absolute left-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-background/90 shadow transition active:scale-95"
+          className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full border bg-background shadow-md transition active:scale-95"
         >
           <Minus className="h-4 w-4" />
         </button>
@@ -454,7 +453,7 @@ function OptionGrid({
             {opt.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={opt.imageUrl}
+                src={squareImage(opt.imageUrl)}
                 alt={opt.label}
                 className="w-28 h-28 object-contain"
               />
