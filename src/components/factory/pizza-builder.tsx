@@ -10,6 +10,7 @@ import { useCartStore } from "@/store/cart";
 import type {
   PizzaBuilderData,
   PizzaBuilderCartSelection,
+  PizzaBuilderTopping,
 } from "@/types";
 
 type Step = "size" | "dough" | "sauce" | "toppings";
@@ -278,44 +279,17 @@ export function PizzaBuilder({ data }: { data: PizzaBuilderData }) {
                     </span>
                   )}
                 </h3>
-                {group.toppings.map((topping) => {
-                  const count = getToppingCount(topping.id);
-                  return (
-                    <div key={topping.id} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
-                      {topping.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={topping.imageUrl} alt={topping.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
-                      ) : (
-                        <span className="text-xl w-8 text-center shrink-0">{topping.emoji ?? "🍕"}</span>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{topping.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {topping.pricePerUnit > 0 ? `₡${topping.pricePerUnit.toLocaleString("es-CR")} / u.` : "Incluido"}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => setTopping(topping.id, -1, topping.maxPortions)}
-                          disabled={count === 0}
-                          className="h-7 w-7 rounded-full border flex items-center justify-center disabled:opacity-30 active:scale-95 transition"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="w-4 text-center text-sm font-medium">{count}</span>
-                        <button
-                          type="button"
-                          onClick={() => setTopping(topping.id, 1, topping.maxPortions)}
-                          disabled={count >= topping.maxPortions}
-                          className="h-7 w-7 rounded-full border flex items-center justify-center disabled:opacity-30 active:scale-95 transition bg-primary text-primary-foreground"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {group.toppings.map((topping) => (
+                    <ToppingCard
+                      key={topping.id}
+                      topping={topping}
+                      count={getToppingCount(topping.id)}
+                      onAdd={() => setTopping(topping.id, 1, topping.maxPortions)}
+                      onRemove={() => setTopping(topping.id, -1, topping.maxPortions)}
+                    />
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -355,6 +329,97 @@ export function PizzaBuilder({ data }: { data: PizzaBuilderData }) {
           </Button>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Un topping como tarjeta: foto grande, nombre al pie.
+ *
+ * La foto entera es el botón de sumar, porque en el celular es el gesto que ya
+ * hace todo el mundo y el objetivo es apetecible, no un "+" de 28 píxeles. El
+ * menos solo aparece cuando hay algo que bajar: mostrarlo siempre desactivado
+ * era ruido en cada tarjeta de la grilla.
+ *
+ * El menos es hermano del botón, no hijo: un botón dentro de otro no es HTML
+ * válido y el navegador decide solo qué hacer con el clic.
+ */
+function ToppingCard({
+  topping,
+  count,
+  onAdd,
+  onRemove,
+}: {
+  topping: PizzaBuilderTopping;
+  count: number;
+  onAdd: () => void;
+  onRemove: () => void;
+}) {
+  const atMax = count >= topping.maxPortions;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={onAdd}
+        disabled={atMax}
+        aria-label={`Agregar ${topping.name}`}
+        className={cn(
+          "w-full overflow-hidden rounded-xl border-2 text-center transition-all",
+          "active:scale-95 disabled:active:scale-100",
+          count > 0 ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+        )}
+      >
+        <div className="relative aspect-square bg-muted">
+          {topping.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={topping.imageUrl}
+              alt={topping.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-5xl">
+              {topping.emoji ?? "🍕"}
+            </div>
+          )}
+
+          {count > 0 && (
+            <span className="absolute right-1.5 top-1.5 flex h-7 min-w-[1.75rem] items-center justify-center rounded-full bg-primary px-1.5 text-sm font-bold text-primary-foreground shadow">
+              {count}
+            </span>
+          )}
+
+          <span
+            className={cn(
+              "absolute bottom-1.5 right-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-background/90 shadow",
+              atMax && "opacity-40"
+            )}
+          >
+            <Plus className="h-4 w-4" />
+          </span>
+        </div>
+
+        <div className="px-2 py-2">
+          <p className="text-sm font-semibold leading-tight">{topping.name}</p>
+          <p className="text-xs text-muted-foreground">
+            {topping.pricePerUnit > 0
+              ? `₡${topping.pricePerUnit.toLocaleString("es-CR")} / u.`
+              : "Incluido"}
+          </p>
+        </div>
+      </button>
+
+      {count > 0 && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`Quitar una porción de ${topping.name}`}
+          className="absolute left-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-background/90 shadow transition active:scale-95"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }
