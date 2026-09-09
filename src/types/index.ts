@@ -135,9 +135,26 @@ export interface CartItem {
 
 export type DeliveryMethod = "TAKEOUT" | "DELIVERY";
 
+/**
+ * Avance del pedido en cocina, según nico. Va aparte de `status` porque ese
+ * describe la decisión del staff (aceptar/rechazar) y se queda en ACCEPTED
+ * para siempre: sin esto no hay cómo saber que el pedido ya está listo.
+ * `null` mientras el pedido todavía no tiene factura.
+ *
+ * Un pedido sin comandas (un café: nada que preparar) nace en READY y nunca
+ * pasa por IN_PREPARATION.
+ */
+export type KitchenStatus =
+  | "PENDING"
+  | "IN_PREPARATION"
+  | "READY"
+  | "DELIVERED"
+  | "CANCELLED";
+
 export interface OrderStatus {
   id: string;
   status: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
+  kitchenStatus?: KitchenStatus | null;
   rejectedReason?: string;
   customerName: string;
   deliveryMethod: DeliveryMethod;

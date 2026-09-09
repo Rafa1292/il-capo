@@ -2,10 +2,82 @@
 
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { CheckCircle2, XCircle, Clock, Bike, UtensilsCrossed } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Bike,
+  UtensilsCrossed,
+  PackageCheck,
+  PartyPopper,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { OrderStatus } from "@/types";
+
+/**
+ * Pedido ya aceptado por el restaurante. Lo que ve el cliente a partir de acá
+ * lo manda `kitchenStatus` (avance real en cocina): `status` se queda en
+ * ACCEPTED para siempre, así que antes la pantalla decía "estará lista pronto"
+ * incluso con el pedido ya entregado.
+ */
+function AcceptedDisplay({ order }: { order: OrderStatus }) {
+  const isDelivery = order.deliveryMethod === "DELIVERY";
+  const method = (
+    <div className="flex items-center gap-2 text-sm font-medium mt-2">
+      {isDelivery ? (
+        <Bike className="h-4 w-4 text-primary" />
+      ) : (
+        <UtensilsCrossed className="h-4 w-4 text-primary" />
+      )}
+      <span>{isDelivery ? "Entrega a domicilio" : "Para recoger"}</span>
+    </div>
+  );
+
+  if (order.kitchenStatus === "DELIVERED") {
+    return (
+      <div className="flex flex-col items-center gap-4 text-center">
+        <PartyPopper className="h-20 w-20 text-primary" />
+        <h2 className="text-xl font-bold">Pedido entregado</h2>
+        <p className="text-muted-foreground text-sm max-w-xs">
+          ¡Buen provecho! Gracias por pedir con nosotros.
+        </p>
+      </div>
+    );
+  }
+
+  if (order.kitchenStatus === "READY") {
+    return (
+      <div className="flex flex-col items-center gap-4 text-center">
+        <PackageCheck className="h-20 w-20 text-green-500" />
+        <h2 className="text-xl font-bold text-green-700">¡Tu pedido está listo!</h2>
+        <p className="text-muted-foreground text-sm max-w-xs">
+          {isDelivery
+            ? "Ya salió de cocina y va camino a tu dirección."
+            : "Podés pasar a recogerlo cuando querás."}
+        </p>
+        {method}
+      </div>
+    );
+  }
+
+  // PENDING, IN_PREPARATION o todavía sin dato: el pedido está en cocina.
+  return (
+    <div className="flex flex-col items-center gap-4 text-center">
+      <CheckCircle2 className="h-20 w-20 text-green-500" />
+      <h2 className="text-xl font-bold text-green-700">¡Pedido aceptado!</h2>
+      <p className="text-muted-foreground text-sm max-w-xs">
+        {order.kitchenStatus === "IN_PREPARATION"
+          ? "Ya lo están preparando. Te avisamos apenas esté listo."
+          : "Lo estamos preparando. Te avisamos apenas esté listo."}
+      </p>
+      {method}
+      <p className="text-xs text-muted-foreground animate-pulse">
+        Actualizando automáticamente...
+      </p>
+    </div>
+  );
+}
 
 function StatusDisplay({ order }: { order: OrderStatus }) {
   if (order.status === "PENDING") {
@@ -23,38 +95,29 @@ function StatusDisplay({ order }: { order: OrderStatus }) {
     );
   }
 
-  if (order.status === "ACCEPTED") {
-    return (
-      <div className="flex flex-col items-center gap-4 text-center">
-        <CheckCircle2 className="h-20 w-20 text-green-500" />
-        <h2 className="text-xl font-bold text-green-700">¡Pedido aceptado!</h2>
-        <p className="text-muted-foreground text-sm max-w-xs">
-          {order.deliveryMethod === "DELIVERY"
-            ? "Tu pizza está en camino. Prepárate para recibirla."
-            : "Tu pizza estará lista pronto para que la recojas."}
-        </p>
-        <div className="flex items-center gap-2 text-sm font-medium mt-2">
-          {order.deliveryMethod === "DELIVERY" ? (
-            <Bike className="h-4 w-4 text-primary" />
-          ) : (
-            <UtensilsCrossed className="h-4 w-4 text-primary" />
-          )}
-          <span>{order.deliveryMethod === "DELIVERY" ? "Entrega a domicilio" : "Para recoger"}</span>
-        </div>
-      </div>
-    );
+  if (order.status === "ACCEPTED" && order.kitchenStatus !== "CANCELLED") {
+    return <AcceptedDisplay order={order} />;
   }
 
-  if (order.status === "REJECTED" || order.status === "CANCELLED") {
+  if (
+    order.status === "REJECTED" ||
+    order.status === "CANCELLED" ||
+    order.kitchenStatus === "CANCELLED"
+  ) {
     return (
       <div className="flex flex-col items-center gap-4 text-center">
         <XCircle className="h-20 w-20 text-destructive" />
         <h2 className="text-xl font-bold text-destructive">Pedido no procesado</h2>
-        {order.rejectedReason && (
+        {order.rejectedReason ? (
           <p className="text-muted-foreground text-sm max-w-xs">
             {order.rejectedReason}
           </p>
-        )}
+        ) : order.kitchenStatus === "CANCELLED" ? (
+          <p className="text-muted-foreground text-sm max-w-xs">
+            El pedido se anuló en el restaurante. Si ya pagaste, comunicate con
+            nosotros para resolverlo.
+          </p>
+        ) : null}
         <Link href="/">
           <Button className="mt-2 bg-primary hover:bg-primary/90">
             Intentar nuevamente
@@ -93,16 +156,31 @@ function OrderStatusContent() {
     }
   }, [id, token]);
 
+  const orderStatus = order?.status ?? null;
+
+  // El pedido ya no se va a mover: entregado, anulado o rechazado. Antes se
+  // dejaba de consultar apenas salía de PENDING, así que el cliente se quedaba
+  // en "pedido aceptado" para siempre aunque cocina ya lo hubiera despachado.
+  const isFinal =
+    order !== null &&
+    (order.status === "REJECTED" ||
+      order.status === "CANCELLED" ||
+      order.kitchenStatus === "DELIVERED" ||
+      order.kitchenStatus === "CANCELLED");
+
   useEffect(() => {
     fetchStatus();
-    // Poll every 5s while PENDING
-    const interval = setInterval(() => {
-      if (order?.status === "PENDING" || order === null) {
-        fetchStatus();
-      }
-    }, 5000);
+  }, [fetchStatus]);
+
+  useEffect(() => {
+    if (isFinal) return;
+    // Esperando confirmación se consulta rápido (el cliente está mirando la
+    // pantalla); ya aceptado, cocina no cambia cada 5 s y el polling de todos
+    // los clientes de la sede pasa por la misma API key de nico.
+    const everyMs = !orderStatus || orderStatus === "PENDING" ? 5000 : 15000;
+    const interval = setInterval(fetchStatus, everyMs);
     return () => clearInterval(interval);
-  }, [fetchStatus, order?.status, order]);
+  }, [fetchStatus, isFinal, orderStatus]);
 
   if (error) {
     return (

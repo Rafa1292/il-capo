@@ -84,10 +84,33 @@ Respuesta: `{ "success": true, "data": { "id", "status":"PENDING", "estimatedTot
 ```json
 { "success": true, "data": {
   "id", "status":"PENDING"|"ACCEPTED"|"REJECTED"|"CANCELLED",
+  "kitchenStatus":"PENDING"|"IN_PREPARATION"|"READY"|"DELIVERED"|"CANCELLED"|null,
   "rejectedReason", "billId", "customerName", "deliveryMethod",
   "estimatedTotal", "createdAt", "updatedAt"
 }}
 ```
+
+**`status` es la decisión del staff; `kitchenStatus` es el avance real.** `status`
+llega a `ACCEPTED` y se queda ahí para siempre: todo lo que pasa después
+(preparación, listo, entregado) vive en `kitchenStatus`, que nico agrega sobre
+las comandas de la factura. Es `null` mientras el pedido no tenga factura
+(`PENDING`/`REJECTED`).
+
+| kitchenStatus | Qué mostrar |
+|---------------|-------------|
+| `PENDING` | aceptado, cocina todavía no lo toca |
+| `IN_PREPARATION` | ya lo están preparando |
+| `READY` | listo para recoger / ya despachado |
+| `DELIVERED` | entregado — **estado final** |
+| `CANCELLED` | la factura se anuló — **estado final** |
+
+Un pedido que **no genera comanda** (un café: no hay nada que preparar) nace en
+`READY` y pasa a `DELIVERED` al cerrarse la factura; nunca pasa por
+`IN_PREPARATION`.
+
+**Polling:** cada 5 s mientras `status = PENDING`, cada 15 s después, y se
+detiene solo en estado final. Cortarlo al salir de `PENDING` —como estaba— dejaba
+al cliente clavado en "pedido aceptado" aunque ya lo hubiera recogido.
 
 ---
 
