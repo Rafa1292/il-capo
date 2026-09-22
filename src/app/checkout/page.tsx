@@ -20,10 +20,8 @@ import { track } from "@/lib/track";
 type PaymentMethod = "CARD" | "CASH";
 
 /**
- * El efectivo está construido de punta a punta pero apagado: exige verificar el
- * número con un código de WhatsApp, y eso necesita el número real del negocio
- * ligado a la cuenta de Meta (hoy hay uno de prueba, que no permite crear la
- * plantilla del código).
+ * El efectivo exige que el cliente verifique su número: manda un código por
+ * WhatsApp al número del negocio y nico lo reconoce (ver CashVerification).
  *
  * Se enciende con NEXT_PUBLIC_CASH_ENABLED=true. Ver docs/pagos-efectivo.md.
  */
@@ -481,10 +479,15 @@ export default function CheckoutPage() {
           )}
 
           {paymentMethod === "CASH" && !phoneIsVerified && (
+            // El número que queda es el que escribió por WhatsApp, no el que
+            // digitó acá: es el que nico habilitó, y el pedido tiene que ir con
+            // ese o lo rechaza. Si digitó otro, se corrige solo.
             <CashVerification
-              phone={phone}
-              customerName={name}
-              onVerified={() => setVerifiedPhone(digitsOnly(phone))}
+              onVerified={(verified) => {
+                setVerifiedPhone(verified);
+                setPhone(verified);
+              }}
+              onUnavailable={() => setPaymentMethod("CARD")}
             />
           )}
           {deliveryMethod === "DELIVERY" && (
