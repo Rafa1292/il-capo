@@ -34,14 +34,6 @@ const INFO: Record<string, LocationInfo> = {
     longitude: -84.3110346,
     phone: "+50624443001",
   },
-  "san-ramon": {
-    streetAddress: "Diagonal a la sucursal de la CCSS, frente al Bar El Establo",
-    locality: "San Ramón",
-    region: "Alajuela",
-    latitude: 10.0829742,
-    longitude: -84.4724061,
-    phone: null,
-  },
 };
 
 export function locationInfo(slug: string): LocationInfo | null {

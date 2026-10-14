@@ -19,7 +19,7 @@ export default function PrivacidadPage() {
       </P>
       <P>
         El responsable del tratamiento es <strong>il Capo Pizzería</strong>, con
-        locales en Grecia y San Ramón, Alajuela, Costa Rica. {CONTACT_LINE}
+        local en Grecia, Alajuela, Costa Rica. {CONTACT_LINE}
       </P>
 
       <Section title="Qué datos pedimos y para qué">

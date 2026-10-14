@@ -15,8 +15,7 @@ export default function TerminosPage() {
     <LegalPage title="Términos y condiciones" updated={LEGAL_UPDATED}>
       <P>
         Estas condiciones aplican a los pedidos hechos por este sitio a{" "}
-        <strong>il Capo Pizzería</strong> (Grecia y San Ramón, Alajuela, Costa
-        Rica). Al confirmar un pedido las estás aceptando.
+        <strong>il Capo Pizzería</strong> (Grecia, Alajuela, Costa Rica). Al confirmar un pedido las estás aceptando.
       </P>
 
       <Section title="Cómo funciona un pedido">

@@ -38,8 +38,8 @@ export function LocationPickerScreen({ locations }: Props) {
             "describa completamente la funcionalidad de la app": una frase de
             marca ("pizza artesanal") no cuenta como descripción. */}
         <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-          il Capo Pizzería es la aplicación de pedidos en línea de nuestras
-          pizzerías en Grecia y San Ramón, Costa Rica. Acá podés ver la carta,
+          il Capo Pizzería es la aplicación de pedidos en línea de nuestra
+          pizzería en Grecia, Costa Rica. Acá podés ver la carta,
           armar tu pizza, hacer el pedido y pagarlo con tarjeta, para que te lo
           llevemos a domicilio o lo dejemos listo para recoger.
         </p>

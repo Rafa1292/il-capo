@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
+  // La sede de San Ramón cerró (oct-2026). Los links viejos —publicaciones,
+  // QR, Google— llevan a la carta de Grecia en vez de a un local que ya no está.
+  async redirects() {
+    return [
+      { source: "/san-ramon", destination: "/grecia", permanent: true },
+      { source: "/san-ramon/:path*", destination: "/grecia", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
