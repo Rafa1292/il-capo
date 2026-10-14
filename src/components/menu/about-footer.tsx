@@ -74,8 +74,8 @@ export function AboutFooter({ schedule }: { schedule: Schedule }) {
       <section className="space-y-3 border-t border-border pt-6 text-xs text-muted-foreground">
         <p>
           <strong className="text-foreground">il Capo Pizzería</strong> es la
-          aplicación de pedidos en línea de nuestras pizzerías en Grecia y San
-          Ramón, Costa Rica. Acá podés ver la carta, armar tu pizza, hacer el
+          aplicación de pedidos en línea de nuestra pizzería en Grecia, Costa
+          Rica. Acá podés ver la carta, armar tu pizza, hacer el
           pedido y pagarlo con tarjeta, para que te lo llevemos a domicilio o lo
           dejemos listo para recoger.
         </p>
