@@ -13,6 +13,7 @@ import type {
   PizzaBuilderTopping,
   PizzaBuilderCartSelection,
 } from "@/types";
+import { isGift } from "@/lib/gift";
 
 /** Error de negocio: ítem/modificador/selección inexistente o inválida. */
 export class PricingError extends Error {}
@@ -106,6 +107,9 @@ export function priceItemBase(item: PriceableItem, catalog: Catalog, index: Menu
     if (!catalog.builder) throw new Error("Pizza builder no disponible");
     return pricePizzaUnit(item.pizzaBuilder, catalog.builder);
   }
+  // El regalo está oculto en la carta de nico (para que el bot de WhatsApp no lo
+  // ofrezca), así que no viene en el catálogo. Vale ₡0; nico lo vuelve a validar.
+  if (isGift(item.saleItemId)) return 0;
   const menuItem = index.itemById.get(item.saleItemId);
   if (!menuItem) throw new PricingError(`Ítem inexistente: ${item.saleItemId}`);
   return menuItem.price;

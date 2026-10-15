@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPayment, TILOPAY_CURRENCY } from "@/lib/tilopay";
 import { getCatalog } from "@/lib/catalog";
 import { priceCart, PricingError, type PriceableItem } from "@/lib/pricing";
+import { sanitizeGift } from "@/lib/gift";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { requireLocation } from "@/lib/api-location";
 import { resolveDeliveryFee, OutOfRangeError } from "@/lib/delivery";
@@ -48,6 +49,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = (await req.json()) as CreateBody;
+    // El regalo de lunes a jueves: uno, con otra compra y en su día (lib/gift).
+    if (Array.isArray(body.items)) body.items = sanitizeGift(body.items);
 
     if (!Array.isArray(body.items) || body.items.length === 0) {
       return NextResponse.json({ error: "El carrito está vacío" }, { status: 400 });

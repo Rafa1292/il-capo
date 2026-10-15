@@ -3,7 +3,8 @@ import { nowInCostaRica } from "@/lib/schedule";
 /**
  * Regalo de la web: pan de ajo gratis de lunes a jueves.
  *
- * Es un producto de nico con precio ₡0 ("Regalia pan ajo"), así sale
+ * Es un producto de nico con precio ₡0 ("Regalia pan ajo"), marcado oculto en
+ * la web para que el bot de WhatsApp no lo ofrezca. Así sale
  * facturado y descontado del inventario como cualquier otro. No se muestra en
  * la carta: se reclama desde el carrito, uno por pedido y solo si el pedido
  * trae algo más. El servidor vuelve a aplicar estas reglas antes de mandar el
