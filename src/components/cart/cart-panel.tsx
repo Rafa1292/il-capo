@@ -1,13 +1,39 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ShoppingBag, Trash2, Minus, Plus } from "lucide-react";
+import { ShoppingBag, Trash2, Minus, Plus, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore, itemTotal } from "@/store/cart";
+import { GIFT, giftAvailableToday, isGift } from "@/lib/gift";
 
 export function CartPanel() {
-  const { items, count, total, removeItem, updateQuantity } = useCartStore();
+  const { items, total, removeItem, updateQuantity, addItem } = useCartStore();
   const cartTotal = total();
+
+  // El día se mira en el navegador al abrir el carrito; el servidor lo vuelve
+  // a revisar al confirmar el pedido.
+  const [giftDay, setGiftDay] = useState(false);
+  useEffect(() => {
+    setGiftDay(giftAvailableToday());
+  }, []);
+
+  const giftLine = items.find((i) => isGift(i.saleItemId));
+  const hasOthers = items.some((i) => !isGift(i.saleItemId));
+
+  // Sin otro producto, o fuera de lunes a jueves, el regalo se va solo.
+  useEffect(() => {
+    if (giftLine && (!hasOthers || !giftDay)) removeItem(giftLine.cartId);
+  }, [giftLine, hasOthers, giftDay, removeItem]);
+
+  const claimGift = () =>
+    addItem({
+      saleItemId: GIFT.saleItemId,
+      description: GIFT.description,
+      quantity: 1,
+      unitPrice: 0,
+      modifiers: [],
+    });
 
   if (items.length === 0) {
     return (
@@ -45,9 +71,22 @@ export function CartPanel() {
                   </p>
                 )}
                 <p className="text-sm font-semibold text-primary">
-                  ₡{itemTotal(item).toLocaleString("es-CR")}
+                  {isGift(item.saleItemId)
+                    ? "Gratis"
+                    : `₡${itemTotal(item).toLocaleString("es-CR")}`}
                 </p>
               </div>
+              {isGift(item.saleItemId) ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-destructive"
+                  onClick={() => removeItem(item.cartId)}
+                  aria-label="Quitar el regalo"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              ) : (
               <div className="flex items-center gap-1 shrink-0">
                 <Button
                   variant="outline"
@@ -75,9 +114,26 @@ export function CartPanel() {
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
+              )}
             </div>
           </div>
         ))}
+
+        {giftDay && hasOthers && !giftLine && (
+          <button
+            type="button"
+            onClick={claimGift}
+            className="flex w-full items-center gap-3 rounded-lg border border-dashed border-primary/50 bg-primary/5 px-3 py-2.5 text-left text-sm hover:bg-primary/10"
+          >
+            <Gift className="h-5 w-5 shrink-0 text-primary" />
+            <span>
+              <span className="font-semibold">Reclamá tu pan de ajo gratis</span>
+              <span className="block text-xs text-muted-foreground">
+                De lunes a jueves, en pedidos por la web
+              </span>
+            </span>
+          </button>
+        )}
       </div>
 
       <div className="border-t p-4 space-y-3">

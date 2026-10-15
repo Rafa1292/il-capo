@@ -19,6 +19,7 @@ import { signOrderId } from "@/lib/order-token";
 import { isPhoneVerifiedHere } from "@/lib/cash-verification";
 import { requireLocation } from "@/lib/api-location";
 import { reportIncident } from "@/lib/report-incident";
+import { sanitizeGift } from "@/lib/gift";
 import type { Location } from "@/lib/locations";
 import type { PizzaBuilderCartSelection } from "@/types";
 
@@ -109,6 +110,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = (await req.json()) as ConfirmBody;
+    // El regalo de lunes a jueves: uno, con otra compra y en su día (lib/gift).
+    if (Array.isArray(body.items)) body.items = sanitizeGift(body.items);
     bodyRef = body;
     orderNumber = body.orderNumber?.trim();
 

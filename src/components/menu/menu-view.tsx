@@ -7,10 +7,12 @@ import { OpeningStatus } from "@/components/menu/opening-status";
 import { AboutFooter } from "@/components/menu/about-footer";
 import { DragScroller } from "@/components/ui/drag-scroller";
 import { PausedBanner } from "@/components/menu/paused-banner";
+import { GiftBanner } from "@/components/menu/gift-banner";
 import { TrackVisit } from "@/components/menu/track-visit";
 import { RestaurantJsonLd } from "@/components/seo/json-ld";
 import { locationInfo } from "@/lib/business";
 import { getStoreStatus } from "@/lib/store-status";
+import { isGift } from "@/lib/gift";
 import type { Location } from "@/lib/locations";
 import type { MenuCategory } from "@/types";
 
@@ -46,10 +48,15 @@ interface Props {
 export async function MenuView({ location, showLocationName }: Props) {
   // En paralelo: el estado no depende de la carta y esperarlo en serie le
   // agregaría su latencia a la primera pintura de la página.
-  const [categories, status] = await Promise.all([
+  const [menu, status] = await Promise.all([
     getMenu(location),
     getStoreStatus(location),
   ]);
+  // El regalo es un producto de ₡0: no va suelto en la carta, se reclama desde
+  // el carrito (ver lib/gift).
+  const categories = menu
+    .map((c) => ({ ...c, items: c.items.filter((i) => !isGift(i.id)) }))
+    .filter((c) => c.items.length > 0);
 
   const info = locationInfo(location.slug);
   const donde = info?.locality ?? location.name;
@@ -102,6 +109,7 @@ export async function MenuView({ location, showLocationName }: Props) {
       </div>
 
       <PausedBanner status={status} />
+      <GiftBanner />
 
       {categories.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
