@@ -10,9 +10,17 @@ import type { MenuItem, CartModifierGroup } from "@/types";
 
 interface Props {
   item: MenuItem;
+  /** `promo`: tarjeta destacada del carrusel de promos (foto grande, sticker, precio grande). */
+  variant?: "default" | "promo";
 }
 
-export function MenuItemCard({ item }: Props) {
+/** "2x1", "3x2"… si el nombre lo dice; si no, "Promo". Va como sticker en la foto. */
+function promoSticker(name: string): string {
+  const m = /(\d+)\s*x\s*(\d+)/i.exec(name);
+  return m ? `${m[1]}x${m[2]}` : "Promo";
+}
+
+export function MenuItemCard({ item, variant = "default" }: Props) {
   const [modifierOpen, setModifierOpen] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
@@ -148,6 +156,67 @@ export function MenuItemCard({ item }: Props) {
       )}
     </div>
   );
+
+  // El precio más bajo cuando lo define el tamaño: en la promo se muestra "desde".
+  const fromPrice = priceGroup ? Math.min(...priceGroup.elements.map((e) => e.price)) : item.price;
+
+  if (variant === "promo") {
+    return (
+      <>
+        {/* 100% foto: nombre, precio y botón van encima de la imagen. */}
+        <div className="overflow-hidden rounded-2xl shadow-lg">
+          <div className="relative aspect-[4/5] w-full bg-muted">
+            {item.imageUrl ? (
+              <Image
+                src={item.imageUrl}
+                alt={item.name}
+                fill
+                sizes="(max-width: 640px) 85vw, 340px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
+                <Pizza className="h-12 w-12" />
+              </div>
+            )}
+            {/* Degradado para que el texto se lea sobre cualquier foto. */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10" />
+            <span className="absolute left-3 top-3 -rotate-6 rounded-lg bg-primary px-3 py-1 text-xl font-black uppercase tracking-tight text-primary-foreground shadow-lg">
+              {promoSticker(item.name)}
+            </span>
+            {item.schedule && (
+              <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[11px] font-semibold text-foreground shadow">
+                {item.schedule}
+              </span>
+            )}
+            <div className="absolute inset-x-0 bottom-0 p-4">
+              <p className="text-xl font-bold leading-tight text-white drop-shadow">{item.name}</p>
+              {item.description && (
+                <p className="mt-1 line-clamp-2 text-xs text-white/80">{item.description}</p>
+              )}
+              <div className="mt-3 flex items-end justify-between gap-2">
+                <p className="text-3xl font-black text-white drop-shadow">
+                  {priceGroup && <span className="mr-1 text-xs font-medium text-white/70">desde</span>}
+                  ₡{fromPrice.toLocaleString("es-CR")}
+                </p>
+                {/* Sobre la foto: el control va en una píldora blanca para que se lea. */}
+                <div className="rounded-full bg-white/95 p-1 shadow-lg">{action}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {(needsConfig || hasExtras) && (
+          <ModifierSelector
+            item={item}
+            open={modifierOpen}
+            onClose={() => setModifierOpen(false)}
+            onConfirm={handleModifierConfirm}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <>

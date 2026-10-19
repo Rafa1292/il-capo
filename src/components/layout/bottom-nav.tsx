@@ -35,20 +35,19 @@ export function BottomNav() {
         </svg>
       </a>}
 
-      {/* Juegos — flotante a la izquierda: en la barra no entra un tercer ítem
-          sin quedar debajo del logo central, y va más arriba que la píldora de
-          "pedido en curso" (bottom-20) para no taparla. Va a /juegos (ruta del servidor
-          que redirige a los juegos de nico con pase fresco): <a> y no <Link>,
-          y en otra pestaña para no perder el carrito. */}
+      {/* Juegos — círculo flotante a la izquierda, en espejo del de WhatsApp
+          (en la barra no entra un tercer ítem sin quedar debajo del logo).
+          Va a /juegos (ruta del servidor que redirige a los juegos de nico con
+          pase fresco): <a> y no <Link>, y en otra pestaña para no perder el carrito. */}
       <a
         href="/juegos"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-[8.5rem] left-4 z-50 flex h-12 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+        className="fixed bottom-20 left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
         aria-label="Juegos"
+        title="Juegos"
       >
-        <Gamepad2 className="h-5 w-5" />
-        Juegos
+        <Gamepad2 className="h-6 w-6" />
       </a>
 
       {/* Bottom nav */}
