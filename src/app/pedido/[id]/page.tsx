@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { OrderStatus } from "@/types";
+import { GamesInvite } from "@/components/order/games-invite";
 
 /**
  * Pedido ya aceptado por el restaurante. Lo que ve el cliente a partir de acá
@@ -204,6 +205,11 @@ function OrderStatusContent() {
   return (
     <div className="flex flex-col items-center gap-8 py-10">
       <StatusDisplay order={order} />
+
+      {/* Mientras el pedido está en cocina o en camino: el momento de esperar. */}
+      {order.status === "ACCEPTED" &&
+        order.kitchenStatus !== "DELIVERED" &&
+        order.kitchenStatus !== "CANCELLED" && <GamesInvite orderId={order.id} token={token} />}
 
       <div className="border rounded-xl p-4 w-full max-w-sm space-y-2 text-sm">
         <div className="flex justify-between">
