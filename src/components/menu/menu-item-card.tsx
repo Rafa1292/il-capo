@@ -180,16 +180,19 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
               </div>
             )}
             {/* Degradado para que el texto se lea sobre cualquier foto. */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10" />
-            <span className="absolute left-3 top-3 -rotate-6 rounded-lg bg-primary px-3 py-1 text-xl font-black uppercase tracking-tight text-primary-foreground shadow-lg">
-              {promoSticker(item.name)}
-            </span>
-            {item.schedule && (
-              <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[11px] font-semibold text-foreground shadow">
-                {item.schedule}
-              </span>
-            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+            {/* Todo abajo: si la foto es un arte (logo, título), arriba queda limpio. */}
             <div className="absolute inset-x-0 bottom-0 p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="-rotate-3 rounded-md bg-primary px-2.5 py-0.5 text-sm font-black uppercase tracking-tight text-primary-foreground shadow-lg">
+                  {promoSticker(item.name)}
+                </span>
+                {item.schedule && (
+                  <span className="rounded-full bg-white/90 px-2.5 py-0.5 text-[11px] font-semibold text-foreground shadow">
+                    {item.schedule}
+                  </span>
+                )}
+              </div>
               <p className="text-xl font-bold leading-tight text-white drop-shadow">{item.name}</p>
               {item.description && (
                 <p className="mt-1 line-clamp-2 text-xs text-white/80">{item.description}</p>
