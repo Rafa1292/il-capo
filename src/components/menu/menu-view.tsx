@@ -55,11 +55,19 @@ export async function MenuView({ location, showLocationName }: Props) {
   ]);
   // El regalo es un producto de ₡0: no va suelto en la carta, se reclama desde
   // el carrito (ver lib/gift).
-  const categories = menu
+  const allCategories = menu
     .map((c) => ({ ...c, items: c.items.filter((i) => !isGift(i.id)) }))
     .filter((c) => c.items.length > 0);
-  // Lo que tiene horario de venta y vale ahora: se destaca arriba.
-  const promos = categories.flatMap((c) => c.items).filter((i) => i.schedule);
+  // Arriba, destacadas: la categoría de promociones entera (el dueño decide
+  // qué es promo moviendo productos a esa categoría en nico) y, de las demás,
+  // lo que tiene horario de venta y vale ahora ("2x1 solo los lunes"). La
+  // categoría de promociones no se repite abajo.
+  const isPromoCategory = (name: string) => /promo/i.test(name);
+  const categories = allCategories.filter((c) => !isPromoCategory(c.name));
+  const promos = [
+    ...allCategories.filter((c) => isPromoCategory(c.name)).flatMap((c) => c.items),
+    ...categories.flatMap((c) => c.items).filter((i) => i.schedule),
+  ].filter((item, idx, list) => list.findIndex((o) => o.id === item.id) === idx);
 
   const info = locationInfo(location.slug);
   const donde = info?.locality ?? location.name;
@@ -115,7 +123,7 @@ export async function MenuView({ location, showLocationName }: Props) {
       <GiftBanner />
       <TodayPromos items={promos} />
 
-      {categories.length === 0 ? (
+      {categories.length === 0 && promos.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
           <p className="text-muted-foreground">El menú no está disponible en este momento.</p>
           <p className="text-sm text-muted-foreground">Por favor intenta nuevamente más tarde.</p>
