@@ -157,7 +157,7 @@ export default function PrivacidadPage() {
         <P>
           Podés pedirnos que te digamos qué información tuya tenemos, que la
           corrijamos o que la borremos. Escribinos por WhatsApp al{" "}
-          <strong>7051 9920</strong> y te respondemos.
+          <strong>6176 9818</strong> y te respondemos.
         </P>
         <P>
           Tratamos tus datos conforme a la Ley N.º 8968 de Protección de la

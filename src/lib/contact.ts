@@ -3,6 +3,6 @@
 // apuntando a un WhatsApp inexistente.
 
 /** Formato internacional, sin `+` ni espacios — es lo que espera wa.me. */
-export const WHATSAPP_NUMBER = "50670519920";
+export const WHATSAPP_NUMBER = "50661769818";
 
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
