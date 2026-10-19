@@ -206,6 +206,16 @@ function OrderStatusContent() {
     <div className="flex flex-col items-center gap-8 py-10">
       <StatusDisplay order={order} />
 
+      {/* Para recoger: el código que se dice en caja. Sin esto cualquiera podía
+          retirar el pedido de otro (y con tarjeta ya está cobrado). */}
+      {order.pickupCode && order.status === "ACCEPTED" && order.kitchenStatus !== "DELIVERED" && order.kitchenStatus !== "CANCELLED" && (
+        <div className="w-full max-w-sm rounded-xl border-2 border-primary bg-primary/5 p-4 text-center">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Código de retiro</p>
+          <p className="text-4xl font-bold tracking-[0.3em] text-primary">{order.pickupCode}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Decíselo al cajero cuando pases por tu pedido.</p>
+        </div>
+      )}
+
       {/* Mientras el pedido está en cocina o en camino: el momento de esperar. */}
       {order.status === "ACCEPTED" &&
         order.kitchenStatus !== "DELIVERED" &&
@@ -220,9 +230,20 @@ function OrderStatusContent() {
           <span className="text-muted-foreground">Total estimado</span>
           <span className="font-medium">₡{order.estimatedTotal.toLocaleString("es-CR")}</span>
         </div>
+        {order.voucherDiscount ? (
+          <div className="flex justify-between text-green-700">
+            <span>Vale a favor</span>
+            <span className="font-medium">−₡{order.voucherDiscount.toLocaleString("es-CR")}</span>
+          </div>
+        ) : null}
         <div className="flex justify-between">
           <span className="text-muted-foreground">N.° de pedido</span>
-          <span className="font-mono text-xs">{order.id.slice(-8).toUpperCase()}</span>
+          {/* El número que ve la caja; antes de aceptarse todavía no existe. */}
+          {order.orderNumber ? (
+            <span className="font-bold">#{order.orderNumber}</span>
+          ) : (
+            <span className="font-mono text-xs">{order.id.slice(-8).toUpperCase()}</span>
+          )}
         </div>
       </div>
 

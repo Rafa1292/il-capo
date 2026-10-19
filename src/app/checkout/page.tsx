@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { saveLastOrder } from "@/lib/last-order";
 import { track } from "@/lib/track";
+import { VoucherNotice } from "@/components/checkout/voucher-notice";
 
 type PaymentMethod = "CARD" | "CASH";
 
@@ -375,6 +376,7 @@ export default function CheckoutPage() {
       {/* Payment method */}
       <section className="space-y-3">
         <h2 className="font-semibold">¿Cómo pagás?</h2>
+        {CASH_ENABLED && <VoucherNotice paymentMethod={paymentMethod} verifiedPhone={verifiedPhone} />}
         {!CASH_ENABLED ? (
           <div className="rounded-xl border bg-muted/40 p-4">
             <p className="flex items-center gap-2 text-sm font-medium">

@@ -156,6 +156,12 @@ export interface OrderStatus {
   status: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
   kitchenStatus?: KitchenStatus | null;
   rejectedReason?: string;
+  /** Número del pedido como lo ve la caja (#5271). null hasta que se acepta. */
+  orderNumber?: number | null;
+  /** Código de retiro (pedidos para recoger): se dice al retirar. */
+  pickupCode?: string | null;
+  /** Lo que se descontó de un vale a favor del cliente. */
+  voucherDiscount?: number | null;
   customerName: string;
   deliveryMethod: DeliveryMethod;
   estimatedTotal: number;
