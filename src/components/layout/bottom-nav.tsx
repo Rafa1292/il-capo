@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Pizza, User, Factory } from "lucide-react";
+import { Pizza, User, Factory, Gamepad2 } from "lucide-react";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { WHATSAPP_URL } from "@/lib/contact";
 import { cn } from "@/lib/utils";
@@ -82,6 +82,17 @@ export function BottomNav() {
                 <Factory className="h-5 w-5" />
                 Factory
               </Link>
+              {/* Ruta del servidor que redirige a los juegos de nico (con pase
+                  fresco): <a> y no <Link>, y en otra pestaña para no perder el carrito. */}
+              <a
+                href="/juegos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-0.5 px-2.5 py-2 transition-colors text-xs text-foreground/50 hover:text-foreground"
+              >
+                <Gamepad2 className="h-5 w-5" />
+                Juegos
+              </a>
             </div>
 
             {/* Espacio reservado para el logo central */}

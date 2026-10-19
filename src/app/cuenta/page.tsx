@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useProfileStore } from "@/store/profile";
 import { getLastOrder, lastOrderUrl } from "@/lib/last-order";
+import { GamesWallet } from "@/components/account/games-wallet";
 
 interface SessionInfo {
   email: string;
@@ -286,6 +287,8 @@ function CuentaContent() {
           </div>
         </Link>
       )}
+
+      <GamesWallet />
 
       {/* Datos de pedido */}
       <section className="space-y-3">
