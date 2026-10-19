@@ -160,10 +160,51 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
   // El precio más bajo cuando lo define el tamaño: en la promo se muestra "desde".
   const fromPrice = priceGroup ? Math.min(...priceGroup.elements.map((e) => e.price)) : item.price;
 
+  // Promo con arte: el arte ya trae título, precio y textos (y cada arquetipo
+  // los ubica distinto), así que se muestra entero y solo se le suma una barra
+  // fina abajo con el precio y el botón, que tapa apenas el pie del arte.
+  if (variant === "promo" && item.imageUrl) {
+    return (
+      <>
+        <div className="overflow-hidden rounded-2xl shadow-lg">
+          <div className="relative aspect-[4/5] w-full bg-muted">
+            <Image
+              src={item.imageUrl}
+              alt={item.name}
+              fill
+              sizes="(max-width: 640px) 85vw, 340px"
+              className="object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/75 px-3 py-2 backdrop-blur-sm">
+              <div className="min-w-0">
+                <h3 className="sr-only">{item.name}</h3>
+                <p className="text-lg font-black leading-none text-white">
+                  {priceGroup && <span className="mr-1 text-[10px] font-medium text-white/70">desde</span>}
+                  ₡{fromPrice.toLocaleString("es-CR")}
+                </p>
+                {item.schedule && <p className="mt-0.5 truncate text-[10px] text-white/70">{item.schedule}</p>}
+              </div>
+              {action}
+            </div>
+          </div>
+        </div>
+
+        {(needsConfig || hasExtras) && (
+          <ModifierSelector
+            item={item}
+            open={modifierOpen}
+            onClose={() => setModifierOpen(false)}
+            onConfirm={handleModifierConfirm}
+          />
+        )}
+      </>
+    );
+  }
+
   if (variant === "promo") {
     return (
       <>
-        {/* 100% foto: nombre, precio y botón van encima de la imagen. */}
+        {/* Promo sin foto: nombre, precio y botón van encima del fondo. */}
         <div className="overflow-hidden rounded-2xl shadow-lg">
           <div className="relative aspect-[4/5] w-full bg-muted">
             {item.imageUrl ? (
