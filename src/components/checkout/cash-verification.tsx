@@ -15,6 +15,41 @@ interface Props {
 const POLL_MS = 3000;
 
 /**
+ * El código pendiente se guarda en el aparato: al ir a WhatsApp el navegador
+ * del celular suele recargar la pestaña, y sin esto la página volvía a "Verificar"
+ * y el cliente mandaba un segundo código (pasó). Al volver, se retoma el mismo.
+ */
+const PENDING_KEY = "cash-verification-pending";
+/** Lo que dura un código en nico (30 min); después no vale la pena retomarlo. */
+const PENDING_TTL_MS = 30 * 60 * 1000;
+
+type PendingLink = { ref: string; token: string; waLink: string };
+
+function readPending(): PendingLink | null {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as PendingLink & { at: number };
+    if (Date.now() - p.at > PENDING_TTL_MS) {
+      localStorage.removeItem(PENDING_KEY);
+      return null;
+    }
+    return { ref: p.ref, token: p.token, waLink: p.waLink };
+  } catch {
+    return null;
+  }
+}
+
+function savePending(link: PendingLink | null): void {
+  try {
+    if (link) localStorage.setItem(PENDING_KEY, JSON.stringify({ ...link, at: Date.now() }));
+    else localStorage.removeItem(PENDING_KEY);
+  } catch {
+    // Sin storage: solo se pierde poder retomar tras una recarga.
+  }
+}
+
+/**
  * Comprueba que quien pide es el dueño del número: el cliente manda un código
  * desde SU WhatsApp al número del negocio.
  *
@@ -27,10 +62,16 @@ const POLL_MS = 3000;
  * cookie firmada y los siguientes pedidos en efectivo pasan directo.
  */
 export function CashVerification({ onVerified, onUnavailable }: Props) {
-  const [link, setLink] = useState<{ ref: string; token: string; waLink: string } | null>(null);
+  const [link, setLink] = useState<PendingLink | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [expired, setExpired] = useState(false);
   const done = useRef(false);
+
+  // Retomar el código que quedó esperando si la página se recargó.
+  useEffect(() => {
+    const pending = readPending();
+    if (pending) setLink(pending);
+  }, []);
 
   async function start() {
     setIsBusy(true);
@@ -46,7 +87,9 @@ export function CashVerification({ onVerified, onUnavailable }: Props) {
         if (json.code === "WHATSAPP_NOT_CONFIGURED") onUnavailable?.();
         return;
       }
-      setLink({ ref: json.ref, token: json.token, waLink: json.waLink });
+      const next = { ref: json.ref, token: json.token, waLink: json.waLink };
+      setLink(next);
+      savePending(next);
       // Se abre en otra pestaña para no perder el carrito ni los datos ya
       // escritos: el cliente manda el mensaje y vuelve a esta misma pantalla.
       window.open(json.waLink, "_blank", "noopener");
@@ -69,11 +112,15 @@ export function CashVerification({ onVerified, onUnavailable }: Props) {
         const json = await res.json();
         if (json?.verified && json.phone) {
           done.current = true;
+          savePending(null);
           toast.success("Número verificado");
           onVerified(json.phone as string);
           return;
         }
-        if (json?.expired) setExpired(true);
+        if (json?.expired) {
+          setExpired(true);
+          savePending(null);
+        }
       } catch {
         // Un sondeo perdido no vale molestar al cliente: el siguiente va.
       }
@@ -86,12 +133,17 @@ export function CashVerification({ onVerified, onUnavailable }: Props) {
   // en que acaba de mandar el mensaje.
   useEffect(() => {
     if (!link || expired) return;
+    void check(link.ref);
     const timer = setInterval(() => void check(link.ref), POLL_MS);
     const onFocus = () => void check(link.ref);
+    // En el celular, volver desde WhatsApp no siempre dispara "focus".
+    const onVisible = () => document.visibilityState === "visible" && void check(link.ref);
     window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       clearInterval(timer);
       window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [link, expired, check]);
 
