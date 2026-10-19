@@ -35,6 +35,22 @@ export function BottomNav() {
         </svg>
       </a>}
 
+      {/* Juegos — flotante a la izquierda: en la barra no entra un tercer ítem
+          sin quedar debajo del logo central, y va más arriba que la píldora de
+          "pedido en curso" (bottom-20) para no taparla. Va a /juegos (ruta del servidor
+          que redirige a los juegos de nico con pase fresco): <a> y no <Link>,
+          y en otra pestaña para no perder el carrito. */}
+      <a
+        href="/juegos"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-[8.5rem] left-4 z-50 flex h-12 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+        aria-label="Juegos"
+      >
+        <Gamepad2 className="h-5 w-5" />
+        Juegos
+      </a>
+
       {/* Bottom nav */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-background border-t border-border">
         <div className="relative max-w-2xl mx-auto h-16 px-2">
@@ -82,17 +98,6 @@ export function BottomNav() {
                 <Factory className="h-5 w-5" />
                 Factory
               </Link>
-              {/* Ruta del servidor que redirige a los juegos de nico (con pase
-                  fresco): <a> y no <Link>, y en otra pestaña para no perder el carrito. */}
-              <a
-                href="/juegos"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col items-center gap-0.5 px-2.5 py-2 transition-colors text-xs text-foreground/50 hover:text-foreground"
-              >
-                <Gamepad2 className="h-5 w-5" />
-                Juegos
-              </a>
             </div>
 
             {/* Espacio reservado para el logo central */}
