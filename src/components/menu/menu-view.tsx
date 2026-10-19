@@ -8,6 +8,7 @@ import { AboutFooter } from "@/components/menu/about-footer";
 import { DragScroller } from "@/components/ui/drag-scroller";
 import { PausedBanner } from "@/components/menu/paused-banner";
 import { GiftBanner } from "@/components/menu/gift-banner";
+import { TodayPromos } from "@/components/menu/today-promos";
 import { TrackVisit } from "@/components/menu/track-visit";
 import { RestaurantJsonLd } from "@/components/seo/json-ld";
 import { locationInfo } from "@/lib/business";
@@ -57,6 +58,8 @@ export async function MenuView({ location, showLocationName }: Props) {
   const categories = menu
     .map((c) => ({ ...c, items: c.items.filter((i) => !isGift(i.id)) }))
     .filter((c) => c.items.length > 0);
+  // Lo que tiene horario de venta y vale ahora: se destaca arriba.
+  const promos = categories.flatMap((c) => c.items).filter((i) => i.schedule);
 
   const info = locationInfo(location.slug);
   const donde = info?.locality ?? location.name;
@@ -110,6 +113,7 @@ export async function MenuView({ location, showLocationName }: Props) {
 
       <PausedBanner status={status} />
       <GiftBanner />
+      <TodayPromos items={promos} />
 
       {categories.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">

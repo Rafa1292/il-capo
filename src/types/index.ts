@@ -30,6 +30,8 @@ export interface MenuItem {
   description?: string;
   price: number;
   imageUrl?: string | null;
+  /** Horario de venta ("Solo los lunes"), o null si se vende siempre. Lo manda nico. */
+  schedule?: string | null;
   modifierGroups: ModifierGroup[];
 }
 
