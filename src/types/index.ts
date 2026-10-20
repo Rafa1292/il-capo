@@ -150,6 +150,8 @@ export type KitchenStatus =
   | "PENDING"
   | "IN_PREPARATION"
   | "READY"
+  /** Express que salió con el mensajero y todavía no confirmó la entrega. */
+  | "ON_THE_WAY"
   | "DELIVERED"
   | "CANCELLED";
 

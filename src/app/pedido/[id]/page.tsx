@@ -35,10 +35,10 @@ function AcceptedDisplay({ order }: { order: OrderStatus }) {
     </div>
   );
 
-  // En express, "entregado" en cocina es que se le dio al mensajero: el pedido
-  // recién sale. Decirle "entregado" hacía que los clientes llamaran
-  // preguntando por un pedido que todavía iba en la moto.
-  if (order.kitchenStatus === "DELIVERED" && isDelivery) {
+  // Express que salió con el mensajero: nico manda DELIVERED recién cuando él
+  // confirma la entrega (o pasa el tiempo máximo del viaje). Antes la web decía
+  // "entregado" apenas salía y los clientes llamaban preguntando por él.
+  if (order.kitchenStatus === "ON_THE_WAY") {
     return (
       <div className="flex flex-col items-center gap-4 text-center">
         <Bike className="h-20 w-20 text-primary" />
