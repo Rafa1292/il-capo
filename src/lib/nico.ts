@@ -106,11 +106,26 @@ interface GetOptions {
   location: LocationRef;
 }
 
+/** De madrugada (0:00–6:00 CR) lo cacheado aguanta 7 horas: ver nightAwareRevalidate. */
+const NIGHT_REVALIDATE_SECONDS = 7 * 60 * 60;
+
+/**
+ * De 0:00 a 6:00 (hora de CR) el local está cerrado y casi todas las visitas
+ * son buscadores. Refrescar el menú cada minuto despierta la base de nico, que
+ * se cobra por hora despierta: de noche se sirve lo último que se bajó. Next
+ * evalúa el revalidate al leer, así que a las 6:00 vuelve solo al normal.
+ * El corte real de pedidos fuera de horario lo hace nico al recibirlos.
+ */
+export function nightAwareRevalidate(seconds: number, now = new Date()): number {
+  const crHour = (now.getUTCHours() + 18) % 24; // CR = UTC-6, sin horario de verano
+  return crHour < 6 ? Math.max(seconds, NIGHT_REVALIDATE_SECONDS) : seconds;
+}
+
 export async function nicoGet<T>(path: string, opts: GetOptions): Promise<T> {
   const caching =
     opts.revalidate === undefined
       ? ({ cache: "no-store" } as const)
-      : ({ next: { revalidate: opts.revalidate } } as const);
+      : ({ next: { revalidate: nightAwareRevalidate(opts.revalidate) } } as const);
 
   let res: Response;
   try {
