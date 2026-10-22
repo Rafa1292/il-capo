@@ -7,6 +7,7 @@ import { OpeningStatus } from "@/components/menu/opening-status";
 import { AboutFooter } from "@/components/menu/about-footer";
 import { DragScroller } from "@/components/ui/drag-scroller";
 import { PausedBanner } from "@/components/menu/paused-banner";
+import { ClosedBanner } from "@/components/menu/closed-banner";
 import { GiftBanner } from "@/components/menu/gift-banner";
 import { TodayPromos } from "@/components/menu/today-promos";
 import { TrackVisit } from "@/components/menu/track-visit";
@@ -120,6 +121,11 @@ export async function MenuView({ location, showLocationName }: Props) {
       </div>
 
       <PausedBanner status={status} />
+      <ClosedBanner
+        schedule={status.schedule}
+        configured={status.scheduleConfigured}
+        ordersEnabled={status.ordersEnabled}
+      />
       <GiftBanner />
       <TodayPromos items={promos} />
 

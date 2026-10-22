@@ -145,6 +145,35 @@ export function openStatus(
   return { isOpen: false, hours: today };
 }
 
+/** "hoy a las 11:00", "mañana a las 11:00", "el lunes a las 11:00"; null si nunca abre. */
+export function nextOpeningLabel(schedule: Schedule, now = nowInCostaRica()): string | null {
+  for (let k = 0; k < 8; k++) {
+    const day = (now.day + k) % 7;
+    const d = dayHours(schedule, day);
+    if (!d || (k === 0 && d.open <= now.minutes)) continue;
+    const at = formatMinutes(d.open);
+    if (k === 0) return `hoy a las ${at}`;
+    if (k === 1) return `mañana a las ${at}`;
+    return `el ${DAY_NAMES[day].toLowerCase()} a las ${at}`;
+  }
+  return null;
+}
+
+/**
+ * ¿Hay que frenar los pedidos porque está cerrado? Solo si `enforce` (la sede
+ * publicó su horario en nico y los pedidos no están pausados): con el horario
+ * de respaldo no se corta nada, porque un horario inventado no puede dejar al
+ * local sin vender. El mismo criterio aplica nico al recibir el pedido.
+ */
+export function closedNow(
+  schedule: Schedule,
+  enforce: boolean,
+  now = nowInCostaRica()
+): { closed: boolean; next: string | null } {
+  if (!enforce || openStatus(schedule, now).isOpen) return { closed: false, next: null };
+  return { closed: true, next: nextOpeningLabel(schedule, now) };
+}
+
 /** Un tramo de la semana con el mismo horario, ya listo para mostrar. */
 export interface ScheduleBlock {
   /** "Lunes – Jueves", "Viernes y Sábado", "Domingo" */

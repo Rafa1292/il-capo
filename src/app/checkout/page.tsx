@@ -70,6 +70,19 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CARD");
   /** Número ya comprobado en este dispositivo (lo dice la cookie firmada). */
   const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
+  /** Cerrado ahora: se pide al entrar para no dejar llenar todo y avisar al final. */
+  const [closed, setClosed] = useState<{ opensAt: string | null } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/status")
+      .then((r) => r.json())
+      .then((j) => {
+        if (!j?.closed) return;
+        setClosed({ opensAt: j.opensAt ?? null });
+        track("STORE_CLOSED", { once: true });
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/cash-verification")
@@ -117,7 +130,10 @@ export default function CheckoutPage() {
         .then((j) => {
           if (cancelled) return;
           if (j?.error) return setQuote({ status: "error" });
-          if (!j?.covered) return setQuote({ status: "out-of-range" });
+          if (!j?.covered) {
+            track("OUT_OF_RANGE", { once: true });
+            return setQuote({ status: "out-of-range" });
+          }
           setQuote({ status: "ok", price: j.price, zoneName: j.zoneName ?? null });
         })
         .catch(() => !cancelled && setQuote({ status: "error" }));
@@ -167,6 +183,7 @@ export default function CheckoutPage() {
    * cliente ve qué le falta antes de intentar, no después.
    */
   const blockedReason: string | null = (() => {
+    if (closed) return closed.opensAt ? `Cerrado · abrimos ${closed.opensAt}` : "Ahora estamos cerrados";
     if (paymentMethod === "CASH" && !phoneIsVerified) {
       return "Verificá tu número para continuar";
     }
@@ -311,7 +328,15 @@ export default function CheckoutPage() {
 
       const json = await res.json();
 
+      if (res.status === 409 && json.code === "STORE_CLOSED") {
+        toast.error(json.error, { duration: 8000 });
+        setClosed({ opensAt: null });
+        track("STORE_CLOSED", { once: true });
+        setIsSubmitting(false);
+        return;
+      }
       if (res.status === 409 && json.code === "OUT_OF_RANGE") {
+        track("OUT_OF_RANGE", { once: true });
         toast.error(json.error, { duration: 8000 });
         setQuote({ status: "out-of-range" });
         setIsSubmitting(false);
@@ -328,7 +353,9 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Redirigimos al formulario de pago de Tilopay.
+      // Redirigimos al formulario de pago de Tilopay. Se cuenta antes de salir:
+      // con lo que vuelve sin pagar (PAY_FAIL) dice cuánto se pierde en la pasarela.
+      track("PAY_START");
       window.location.href = json.url;
     } catch {
       toast.error("Error de conexión. Intenta nuevamente.");

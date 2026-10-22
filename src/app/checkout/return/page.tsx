@@ -7,6 +7,7 @@ import { XCircle, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/cart";
 import { saveLastOrder, getLastOrder, lastOrderUrl } from "@/lib/last-order";
+import { track } from "@/lib/track";
 
 // Fases:
 //  - verifying/creating: en curso.
@@ -127,6 +128,7 @@ function ReturnContent() {
         return;
       }
       if (!json.approved) {
+        track("PAY_FAIL");
         setPhase("declined");
         setMessage(json.reason ?? "El pago fue rechazado.");
         return;

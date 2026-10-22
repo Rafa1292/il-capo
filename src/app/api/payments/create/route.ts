@@ -7,6 +7,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { requireLocation } from "@/lib/api-location";
 import { resolveDeliveryFee, OutOfRangeError } from "@/lib/delivery";
 import { getStoreStatus } from "@/lib/store-status";
+import { closedNow } from "@/lib/schedule";
 
 interface CreateBody {
   items: PriceableItem[];
@@ -80,6 +81,20 @@ export async function POST(req: NextRequest) {
           code: "ORDERS_PAUSED",
         },
         { status: 503 }
+      );
+    }
+
+    // Fuera de horario tampoco se autoriza: nico no rechaza un pedido que ya
+    // trae la tarjeta aprobada (quedaría la plata retenida), así que el único
+    // corte para la tarjeta es este, antes de mandar a pagar.
+    const shut = closedNow(status.schedule, status.scheduleConfigured);
+    if (shut.closed) {
+      return NextResponse.json(
+        {
+          error: `Ahora estamos cerrados${shut.next ? `. Abrimos ${shut.next}` : ""}`,
+          code: "STORE_CLOSED",
+        },
+        { status: 409 }
       );
     }
 

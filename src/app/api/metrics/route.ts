@@ -14,7 +14,7 @@ import { requireLocation } from "@/lib/api-location";
  * frenar a quien quiera inflar el contador.
  */
 
-const METRICS = ["VISIT", "CART_ADD", "CHECKOUT"];
+const METRICS = ["VISIT", "CART_ADD", "CHECKOUT", "PAY_START", "PAY_FAIL", "OUT_OF_RANGE", "STORE_CLOSED"];
 const SOURCES = ["google", "facebook", "instagram", "whatsapp", "tiktok", "direct", "other"];
 
 export async function POST(req: NextRequest) {

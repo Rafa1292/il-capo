@@ -11,7 +11,18 @@
  * parámetros que suelen traer datos personales sin que nadie lo note.
  */
 
-export type Metric = "VISIT" | "CART_ADD" | "CHECKOUT";
+export type Metric =
+  | "VISIT"
+  | "CART_ADD"
+  | "CHECKOUT"
+  /** Salió a pagar con tarjeta (a la pasarela). */
+  | "PAY_START"
+  /** Volvió de la pasarela sin pagar. */
+  | "PAY_FAIL"
+  /** Marcó una entrega fuera de la zona. */
+  | "OUT_OF_RANGE"
+  /** Llegó a pagar con el local cerrado. */
+  | "STORE_CLOSED";
 
 function bucketOf(referrer: string): string {
   if (!referrer) return "direct";

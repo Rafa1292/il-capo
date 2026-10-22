@@ -17,6 +17,8 @@ export interface StoreStatus {
   ordersEnabled: boolean;
   pausedNote: string | null;
   schedule: Schedule;
+  /** El horario lo publicó la sede en nico (si no, es el de respaldo y no frena nada). */
+  scheduleConfigured: boolean;
 }
 
 interface RawStatus {
@@ -29,6 +31,7 @@ const FALLBACK: StoreStatus = {
   ordersEnabled: true,
   pausedNote: null,
   schedule: DEFAULT_SCHEDULE,
+  scheduleConfigured: false,
 };
 
 export async function getStoreStatus(location: Location): Promise<StoreStatus> {
@@ -47,6 +50,7 @@ export async function getStoreStatus(location: Location): Promise<StoreStatus> {
       ordersEnabled: data.ordersEnabled,
       pausedNote: data.pausedNote,
       schedule: parseSchedule(data.schedule),
+      scheduleConfigured: data.schedule != null,
     };
   } catch {
     // Si nico no responde, se asume abierto y con el horario de respaldo. Es lo
