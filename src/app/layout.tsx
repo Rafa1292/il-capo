@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { LayoutShell } from "@/components/layout/layout-shell";
 import { SwManager } from "@/components/layout/sw-manager";
+import { PromoCodeCapture } from "@/components/checkout/promo-code-capture";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </LayoutShell>
         <SwManager />
+        <PromoCodeCapture />
         <Toaster richColors position="top-center" />
       </body>
     </html>

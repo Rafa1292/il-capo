@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ cambiar?: string }>;
+  searchParams: Promise<{ cambiar?: string; codigo?: string }>;
 }) {
   // La ficha JSON-LD del local la arma MenuView, que ya trae el horario.
   const only = defaultLocation();
@@ -30,10 +30,11 @@ export default async function HomePage({
 
   // `?cambiar=1` fuerza el selector aunque ya haya una sede recordada: si no,
   // quien quisiera cambiarse quedaría rebotando a la que eligió la primera vez.
-  const { cambiar } = await searchParams;
+  const { cambiar, codigo } = await searchParams;
   if (!cambiar) {
     const chosen = await currentLocation();
-    if (chosen) redirect(`/${chosen.slug}`);
+    // El código del link de WhatsApp tiene que llegar a la carta.
+    if (chosen) redirect(`/${chosen.slug}${codigo ? `?codigo=${encodeURIComponent(codigo)}` : ""}`);
   }
 
   // Un rastreador no trae cookie, así que esto es lo que ve siempre: la marca y

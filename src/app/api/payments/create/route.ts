@@ -8,6 +8,7 @@ import { requireLocation } from "@/lib/api-location";
 import { resolveDeliveryFee, OutOfRangeError } from "@/lib/delivery";
 import { getStoreStatus } from "@/lib/store-status";
 import { closedNow } from "@/lib/schedule";
+import { cleanPromoCode, quotePromo, PromoError } from "@/lib/promo";
 
 interface CreateBody {
   items: PriceableItem[];
@@ -19,6 +20,8 @@ interface CreateBody {
   deliveryLocation?: { latitude: number; longitude: number } | null;
   /** Total que el cliente vio en pantalla; si difiere del recalculado, se frena. */
   expectedTotal?: number;
+  /** Código de descuento: se descuenta antes de autorizar (después no se puede). */
+  promoCode?: string;
 }
 
 /** Trunca strings del cliente a un largo razonable antes de reenviarlos. */
@@ -112,6 +115,23 @@ export async function POST(req: NextRequest) {
     }
     if (total <= 0) {
       return NextResponse.json({ error: "Total inválido" }, { status: 400 });
+    }
+
+    // Código de descuento: lo decide nico sobre la comida (no sobre el envío).
+    // Tiene que ir en la autorización: una tarjeta no se captura por más.
+    const promoCode = cleanPromoCode(body.promoCode);
+    if (promoCode) {
+      try {
+        total -= (await quotePromo(promoCode, total, sede)).discount;
+      } catch (e) {
+        if (e instanceof PromoError) {
+          return NextResponse.json({ error: e.message, code: "PROMO_INVALID" }, { status: 409 });
+        }
+        throw e;
+      }
+      if (total <= 0) {
+        return NextResponse.json({ error: "Total inválido" }, { status: 400 });
+      }
     }
 
     // El envío entra en la autorización: después no se puede sumar. Una tarjeta

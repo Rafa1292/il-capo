@@ -72,6 +72,8 @@ function ReturnContent() {
         // envío tiene que dar igual, o el monto pagado no cuadra y se frena.
         deliveryLocationPin: s.deliveryMethod === "DELIVERY" ? s.deliveryPin : undefined,
         notes: s.notes || undefined,
+        // El mismo código con el que se autorizó: el servidor lo recotiza.
+        promoCode: s.promoCode || undefined,
         items: s.items.map((item) => ({
           saleItemId: item.saleItemId,
           description: item.description,

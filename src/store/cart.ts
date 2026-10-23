@@ -29,6 +29,11 @@ interface CartStore {
   /** Punto exacto de entrega. Define la zona y con ella el costo del envío. */
   deliveryPin: { latitude: number; longitude: number } | null;
   notes: string;
+  /**
+   * Código de descuento (llega por el link de WhatsApp con ?codigo=). Se
+   * guarda: el cliente arma el carrito, se va a pagar y vuelve.
+   */
+  promoCode: string;
   cartOpen: boolean;
 
   addItem: (item: Omit<CartItem, "cartId">) => void;
@@ -42,6 +47,7 @@ interface CartStore {
   /** Cambia de sede. Si es otra, se lleva el carrito: es de otro catálogo. */
   setLocation: (slug: string) => void;
   setNotes: (notes: string) => void;
+  setPromoCode: (code: string) => void;
   setCartOpen: (open: boolean) => void;
 
   total: () => number;
@@ -59,6 +65,7 @@ export const useCartStore = create<CartStore>()(
       locationSlug: null,
       deliveryPin: null,
       notes: "",
+      promoCode: "",
       cartOpen: false,
 
       addItem: (item) => {
@@ -92,6 +99,7 @@ export const useCartStore = create<CartStore>()(
           deliveryAddress: "",
           deliveryPin: null,
           notes: "",
+          promoCode: "",
           deliveryMethod: "TAKEOUT",
         }),
 
@@ -116,6 +124,7 @@ export const useCartStore = create<CartStore>()(
               }
         ),
       setNotes: (notes) => set({ notes }),
+      setPromoCode: (promoCode) => set({ promoCode: promoCode.trim().toUpperCase() }),
       setCartOpen: (cartOpen) => set({ cartOpen }),
 
       total: () => get().items.reduce((sum, i) => sum + itemTotal(i), 0),
@@ -134,6 +143,7 @@ export const useCartStore = create<CartStore>()(
         // tiene que seguir ahí para registrar el pedido con el mismo envío.
         deliveryPin: state.deliveryPin,
         notes: state.notes,
+        promoCode: state.promoCode,
       }),
     }
   )

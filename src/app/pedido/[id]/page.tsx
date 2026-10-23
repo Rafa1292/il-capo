@@ -245,6 +245,12 @@ function OrderStatusContent() {
           <span className="text-muted-foreground">Total estimado</span>
           <span className="font-medium">₡{order.estimatedTotal.toLocaleString("es-CR")}</span>
         </div>
+        {order.promoDiscount ? (
+          <div className="flex justify-between text-green-700">
+            <span>Descuento ({order.promoCode})</span>
+            <span className="font-medium">−₡{order.promoDiscount.toLocaleString("es-CR")}</span>
+          </div>
+        ) : null}
         {order.voucherDiscount ? (
           <div className="flex justify-between text-green-700">
             <span>Vale a favor</span>

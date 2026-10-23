@@ -20,6 +20,7 @@ import { isPhoneVerifiedHere } from "@/lib/cash-verification";
 import { requireLocation } from "@/lib/api-location";
 import { reportIncident } from "@/lib/report-incident";
 import { sanitizeGift } from "@/lib/gift";
+import { cleanPromoCode, quotePromo, PromoError } from "@/lib/promo";
 import type { Location } from "@/lib/locations";
 import type { PizzaBuilderCartSelection } from "@/types";
 
@@ -61,6 +62,8 @@ interface ConfirmBody {
   /** Pin que marcó el cliente en el mapa: define la zona y el costo del envío. */
   deliveryLocationPin?: { latitude: number; longitude: number } | null;
   notes?: string;
+  /** Código de descuento: ya va restado en lo que se autorizó con la tarjeta. */
+  promoCode?: string;
   items: IncomingItem[];
 }
 
@@ -195,6 +198,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Total inválido" }, { status: 400 });
     }
 
+    // ── Código de descuento: el mismo cálculo que entró en la autorización ──
+    // Con tarjeta el cobro ya está hecho: si el código dejó de servir (se usó
+    // en otro lado mientras pagaba), se sigue sin descuento para que el chequeo
+    // de monto lo frene y quede reportado, en vez de cortar sin dejar rastro.
+    const foodTotal = total;
+    const promoCode = cleanPromoCode(body.promoCode);
+    let promoDiscount = 0;
+    let promoProblem: string | null = null;
+    if (promoCode) {
+      try {
+        promoDiscount = (await quotePromo(promoCode, foodTotal, sede)).discount;
+        total -= promoDiscount;
+      } catch (e) {
+        if (!(e instanceof PromoError)) throw e;
+        if (isCash) return NextResponse.json({ error: e.message, code: "PROMO_INVALID" }, { status: 409 });
+        promoProblem = `El código ${promoCode} ya no sirve: ${e.message}`;
+      }
+    }
+
     // ── Envío: el mismo cálculo que entró en la autorización ──
     // Se vuelve a preguntar en vez de confiar en lo que manda el navegador: si
     // no coincidiera con lo autorizado, el chequeo de monto de abajo lo frena.
@@ -246,7 +268,7 @@ export async function POST(req: NextRequest) {
         console.error(
           `[orders] Monto no coincide orderNumber=${orderNumber} pagado=${tx.amount} total=${total}`
         );
-        reportOrphan("REGISTER", `Se cobró ${tx.amount} y el pedido suma ${total}`);
+        reportOrphan("REGISTER", promoProblem ?? `Se cobró ${tx.amount} y el pedido suma ${total}`);
         return NextResponse.json({ error: "El monto pagado no coincide con el pedido" }, { status: 409 });
       }
     }
@@ -267,7 +289,9 @@ export async function POST(req: NextRequest) {
       items: nicoItems,
       // El total del pedido es solo la comida: en nico el express va aparte,
       // fuera del total de venta.
-      estimatedTotal: total - deliveryFee,
+      estimatedTotal: foodTotal,
+      // nico lo vuelve a cotizar y, si es de recuperación, lo reserva.
+      ...(promoCode && !promoProblem ? { promoCode, promoDiscount } : {}),
       // El cajero necesita saberlo antes de despachar: si es efectivo, el
       // mensajero sale con vuelto.
       paymentMethodHint: isCash ? ("CASH" as const) : ("CARD" as const),

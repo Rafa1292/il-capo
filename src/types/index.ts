@@ -166,6 +166,9 @@ export interface OrderStatus {
   pickupCode?: string | null;
   /** Lo que se descontó de un vale a favor del cliente. */
   voucherDiscount?: number | null;
+  /** Código de descuento usado en el checkout y lo que descontó. */
+  promoCode?: string | null;
+  promoDiscount?: number | null;
   customerName: string;
   deliveryMethod: DeliveryMethod;
   estimatedTotal: number;

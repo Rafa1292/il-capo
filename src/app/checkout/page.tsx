@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { saveLastOrder } from "@/lib/last-order";
 import { track } from "@/lib/track";
 import { VoucherNotice } from "@/components/checkout/voucher-notice";
+import { PromoCodeField, type AppliedPromo } from "@/components/checkout/promo-code-field";
 
 type PaymentMethod = "CARD" | "CASH";
 
@@ -57,6 +58,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState(deliveryAddress);
   const [orderNotes, setOrderNotes] = useState(notes);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [promo, setPromo] = useState<AppliedPromo | null>(null);
 
   const savedAddresses = useProfileStore((s) => s.addresses);
   const [recognized, setRecognized] = useState(false);
@@ -174,7 +176,8 @@ export default function CheckoutPage() {
 
   const foodTotal = total();
   const deliveryFee = quote.status === "ok" ? quote.price : 0;
-  const cartTotal = foodTotal + deliveryFee;
+  const promoDiscount = promo?.discount ?? 0;
+  const cartTotal = foodTotal - promoDiscount + deliveryFee;
 
   /**
    * Por qué no se puede pedir todavía, o null si se puede.
@@ -282,6 +285,7 @@ export default function CheckoutPage() {
             deliveryAddress: deliveryMethod === "DELIVERY" ? address.trim() : undefined,
             deliveryLocationPin: deliveryMethod === "DELIVERY" ? deliveryPin : undefined,
             notes: orderNotes.trim() || undefined,
+            promoCode: promo?.code,
             items: items.map((i) => ({
               saleItemId: i.saleItemId,
               description: i.description,
@@ -292,6 +296,7 @@ export default function CheckoutPage() {
           }),
         });
         const cashJson = await cashRes.json();
+        if (cashJson.code === "PROMO_INVALID") setPromo(null);
         if (!cashRes.ok || !cashJson.data?.id) {
           toast.error(cashJson.error ?? "No se pudo registrar el pedido");
           setIsSubmitting(false);
@@ -323,6 +328,8 @@ export default function CheckoutPage() {
           // El servidor compara este total (el que ve el cliente) con el recalculado:
           // si un precio cambió, frena en vez de cobrar un monto distinto al mostrado.
           expectedTotal: cartTotal,
+          // Se descuenta antes de autorizar; la vuelta de Tilopay manda el mismo.
+          promoCode: promo?.code,
         }),
       });
 
@@ -339,6 +346,12 @@ export default function CheckoutPage() {
         track("OUT_OF_RANGE", { once: true });
         toast.error(json.error, { duration: 8000 });
         setQuote({ status: "out-of-range" });
+        setIsSubmitting(false);
+        return;
+      }
+      if (res.status === 409 && json.code === "PROMO_INVALID") {
+        toast.error(json.error, { duration: 8000 });
+        setPromo(null);
         setIsSubmitting(false);
         return;
       }
@@ -403,7 +416,7 @@ export default function CheckoutPage() {
       {/* Payment method */}
       <section className="space-y-3">
         <h2 className="font-semibold">¿Cómo pagás?</h2>
-        {CASH_ENABLED && <VoucherNotice paymentMethod={paymentMethod} verifiedPhone={verifiedPhone} />}
+        {CASH_ENABLED && <VoucherNotice paymentMethod={paymentMethod} verifiedPhone={verifiedPhone} hasPromo={!!promo} />}
         {!CASH_ENABLED ? (
           <div className="rounded-xl border bg-muted/40 p-4">
             <p className="flex items-center gap-2 text-sm font-medium">
@@ -601,6 +614,7 @@ export default function CheckoutPage() {
       {/* Order summary */}
       <section className="space-y-3">
         <h2 className="font-semibold">Resumen</h2>
+        <PromoCodeField items={items} applied={promo} onApplied={setPromo} />
         <div className="border rounded-xl p-4 space-y-3">
           {items.map((item) => (
             <div key={item.cartId} className="flex justify-between gap-2 text-sm">
@@ -612,6 +626,12 @@ export default function CheckoutPage() {
               </span>
             </div>
           ))}
+          {promo && promoDiscount > 0 && (
+            <div className="flex justify-between text-sm text-green-700 dark:text-green-500">
+              <span>Descuento ({promo.code})</span>
+              <span className="font-medium">−₡{promoDiscount.toLocaleString("es-CR")}</span>
+            </div>
+          )}
           {deliveryMethod === "DELIVERY" && (
             <>
               <Separator />
