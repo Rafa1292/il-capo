@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Pizza, X } from "lucide-react";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -18,15 +19,80 @@ interface Props {
   isArt?: boolean;
 }
 
+/** Cuánto hay que arrastrar hacia abajo (px) para cerrar. */
+const SWIPE_CLOSE_PX = 110;
+
+/**
+ * El botón "atrás" del celular cierra la vista en vez de salir de la página.
+ * Al abrir se agrega una entrada al historial (copiando el estado de Next para
+ * que su router la trate como la misma página); "atrás" la saca y cierra. Si se
+ * cierra de otra forma (X, deslizar), se saca esa entrada a mano.
+ */
+function useCloseOnBack(open: boolean, close: () => void): void {
+  const openRef = useRef(open);
+  openRef.current = open;
+
+  useEffect(() => {
+    if (!open) return;
+    const isOurs = () => Boolean((window.history.state as { productDetail?: boolean } | null)?.productDetail);
+    if (!isOurs()) window.history.pushState({ ...(window.history.state ?? {}), productDetail: true }, "");
+
+    const onPop = () => close();
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      // Diferido: en modo estricto el efecto se desmonta y vuelve a montar al
+      // toque, y ahí la vista sigue abierta (no hay que sacar la entrada).
+      setTimeout(() => {
+        if (!openRef.current && isOurs()) window.history.back();
+      }, 0);
+    };
+  }, [open, close]);
+}
+
 /** Vista del producto a pantalla completa: foto grande, descripción entera y el botón. */
 export function ProductDetail({ item, open, onOpenChange, priceGroup, action, isArt }: Props) {
+  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+  useCloseOnBack(open, close);
+
+  // Deslizar hacia abajo para cerrar, solo cuando el contenido está arriba de
+  // todo (si no, el gesto es scroll normal).
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const startY = useRef<number | null>(null);
+  const [dragY, setDragY] = useState(0);
+
+  function onTouchStart(e: React.TouchEvent) {
+    startY.current = (scrollRef.current?.scrollTop ?? 0) <= 0 ? e.touches[0].clientY : null;
+  }
+  function onTouchMove(e: React.TouchEvent) {
+    if (startY.current === null) return;
+    const dy = e.touches[0].clientY - startY.current;
+    setDragY(dy > 0 ? dy : 0);
+  }
+  function onTouchEnd() {
+    if (startY.current !== null && dragY > SWIPE_CLOSE_PX) close();
+    startY.current = null;
+    setDragY(0);
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
         className="top-0 left-0 flex h-[100dvh] max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 p-0 sm:max-w-none data-[state=closed]:zoom-out-100 data-[state=open]:zoom-in-100"
+        style={
+          dragY > 0
+            ? { transform: `translateY(${dragY}px)`, opacity: Math.max(0.4, 1 - dragY / 600), transition: "none" }
+            : undefined
+        }
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
       >
-        <div className="flex-1 overflow-y-auto">
+        {/* Manija: avisa que se puede deslizar hacia abajo para cerrar */}
+        <div className="pointer-events-none absolute top-2 left-1/2 z-10 h-1.5 w-12 -translate-x-1/2 rounded-full bg-white/80 shadow" />
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain">
           <div className="mx-auto w-full max-w-2xl">
             <div
               className={cn(
