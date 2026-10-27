@@ -1,24 +1,33 @@
-import { Flame } from "lucide-react";
+import { Flame, UtensilsCrossed } from "lucide-react";
 import { MenuItemCard } from "@/components/menu/menu-item-card";
 import { DragScroller } from "@/components/ui/drag-scroller";
 import type { MenuItem } from "@/types";
 
+interface Props {
+  items: MenuItem[];
+  /** Título del carrusel; por defecto "Promo"/"Promos" según la cantidad. */
+  title?: string;
+  icon?: "promo" | "lunch";
+}
+
 /**
- * "Promos", arriba de la carta, en carrusel: la categoría de promociones y lo
- * que tiene horario de venta (ej. "2x1 solo los lunes"). nico solo manda cada
- * producto dentro de su horario y la carta se recalcula cada minuto, así que
- * las del día desaparecen solas al día siguiente.
+ * Carrusel arriba de la carta con las tarjetas de arte entero. Se usa para
+ * "Promos" (la categoría de promociones y lo que tiene horario de venta, ej.
+ * "2x1 solo los lunes") y para "Almuerzos". nico solo manda cada producto
+ * dentro de su horario y la carta se recalcula cada minuto, así que lo del día
+ * desaparece solo fuera de hora.
  */
-export function TodayPromos({ items }: { items: MenuItem[] }) {
+export function TodayPromos({ items, title, icon = "promo" }: Props) {
   if (items.length === 0) return null;
+  const Icon = icon === "lunch" ? UtensilsCrossed : Flame;
   return (
     <section className="mb-8">
       <div className="mb-3 flex items-end justify-between">
         <h2 className="flex items-center gap-2 text-xl font-black uppercase tracking-tight">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <Flame className="h-4 w-4" />
+            <Icon className="h-4 w-4" />
           </span>
-          {items.length === 1 ? "Promo" : "Promos"}
+          {title ?? (items.length === 1 ? "Promo" : "Promos")}
         </h2>
         {items.length > 1 && <p className="text-xs text-muted-foreground">Deslizá para ver más →</p>}
       </div>

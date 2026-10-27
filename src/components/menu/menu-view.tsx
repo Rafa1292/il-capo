@@ -64,7 +64,11 @@ export async function MenuView({ location, showLocationName }: Props) {
   // lo que tiene horario de venta y vale ahora ("2x1 solo los lunes"). La
   // categoría de promociones no se repite abajo.
   const isPromoCategory = (name: string) => /promo/i.test(name);
-  const categories = allCategories.filter((c) => !isPromoCategory(c.name));
+  // Los almuerzos (con arte, solo de 11 a 4) van en su propio carrusel, primero:
+  // nico solo los manda dentro de su horario, así que fuera de hora no aparece.
+  const isLunchCategory = (name: string) => /almuerzo/i.test(name);
+  const lunch = allCategories.filter((c) => isLunchCategory(c.name)).flatMap((c) => c.items);
+  const categories = allCategories.filter((c) => !isPromoCategory(c.name) && !isLunchCategory(c.name));
   const promos = [
     ...allCategories.filter((c) => isPromoCategory(c.name)).flatMap((c) => c.items),
     ...categories.flatMap((c) => c.items).filter((i) => i.schedule),
@@ -127,6 +131,7 @@ export async function MenuView({ location, showLocationName }: Props) {
         ordersEnabled={status.ordersEnabled}
       />
       <GiftBanner />
+      <TodayPromos items={lunch} title="Almuerzos" icon="lunch" />
       <TodayPromos items={promos} />
 
       {categories.length === 0 && promos.length === 0 ? (
