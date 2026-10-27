@@ -43,6 +43,32 @@ function bucketOf(referrer: string): string {
 }
 
 /**
+ * Links de anuncios pagados: `?src=anuncio-almuerzo` / `?src=anuncio-cena`.
+ * Solo se aceptan estos valores fijos (nada que pueda traer datos de nadie) y
+ * se recuerdan en la pestaña, para que el carrito y el pago de esa visita
+ * también cuenten para el anuncio aunque el referrer ya sea el propio sitio.
+ */
+const AD_SOURCES: Record<string, string> = {
+  "anuncio-almuerzo": "ad_lunch",
+  "anuncio-cena": "ad_dinner",
+};
+const AD_KEY = "ilcapo:src";
+
+function adSource(): string | null {
+  try {
+    const param = new URLSearchParams(location.search).get("src");
+    const fromUrl = param ? AD_SOURCES[param] : undefined;
+    if (fromUrl) {
+      sessionStorage.setItem(AD_KEY, fromUrl);
+      return fromUrl;
+    }
+    return sessionStorage.getItem(AD_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Nunca lanza ni bloquea. Una métrica que rompe la pantalla del cliente cuesta
  * mucho más de lo que vale el dato.
  */
@@ -56,7 +82,7 @@ export function track(metric: Metric, options?: { once?: boolean }): void {
       sessionStorage.setItem(key, "1");
     }
 
-    const body = JSON.stringify({ metric, source: bucketOf(document.referrer) });
+    const body = JSON.stringify({ metric, source: adSource() ?? bucketOf(document.referrer) });
 
     // `sendBeacon` sobrevive a que el usuario cierre o navegue justo después,
     // que es exactamente cuando se pierden las métricas interesantes.

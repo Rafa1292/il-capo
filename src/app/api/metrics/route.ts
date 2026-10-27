@@ -15,7 +15,7 @@ import { requireLocation } from "@/lib/api-location";
  */
 
 const METRICS = ["VISIT", "CART_ADD", "CHECKOUT", "PAY_START", "PAY_FAIL", "OUT_OF_RANGE", "STORE_CLOSED"];
-const SOURCES = ["google", "facebook", "instagram", "whatsapp", "tiktok", "direct", "other"];
+const SOURCES = ["google", "facebook", "instagram", "whatsapp", "tiktok", "ad_lunch", "ad_dinner", "direct", "other"];
 
 export async function POST(req: NextRequest) {
   // Una visita por pantalla, no cien: sin tope, cualquiera podría dejar el
