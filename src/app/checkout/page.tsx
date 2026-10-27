@@ -15,7 +15,7 @@ import { CashVerification } from "@/components/checkout/cash-verification";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { saveLastOrder } from "@/lib/last-order";
-import { track } from "@/lib/track";
+import { track, trafficSource } from "@/lib/track";
 import { VoucherNotice } from "@/components/checkout/voucher-notice";
 import { PromoCodeField, type AppliedPromo } from "@/components/checkout/promo-code-field";
 
@@ -286,6 +286,7 @@ export default function CheckoutPage() {
             deliveryLocationPin: deliveryMethod === "DELIVERY" ? deliveryPin : undefined,
             notes: orderNotes.trim() || undefined,
             promoCode: promo?.code,
+            trafficSource: trafficSource(),
             items: items.map((i) => ({
               saleItemId: i.saleItemId,
               description: i.description,

@@ -7,7 +7,7 @@ import { XCircle, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/cart";
 import { saveLastOrder, getLastOrder, lastOrderUrl } from "@/lib/last-order";
-import { track } from "@/lib/track";
+import { track, trafficSource } from "@/lib/track";
 
 // Fases:
 //  - verifying/creating: en curso.
@@ -74,6 +74,8 @@ function ReturnContent() {
         notes: s.notes || undefined,
         // El mismo código con el que se autorizó: el servidor lo recotiza.
         promoCode: s.promoCode || undefined,
+        // La pestaña es la misma de antes de ir a pagar: recuerda de dónde llegó.
+        trafficSource: trafficSource(),
         items: s.items.map((item) => ({
           saleItemId: item.saleItemId,
           description: item.description,

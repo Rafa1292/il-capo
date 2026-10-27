@@ -64,6 +64,8 @@ interface ConfirmBody {
   notes?: string;
   /** Código de descuento: ya va restado en lo que se autorizó con la tarjeta. */
   promoCode?: string;
+  /** De dónde llegó la visita ("ad_lunch", "google"…): ver lib/track. */
+  trafficSource?: string;
   items: IncomingItem[];
 }
 
@@ -286,6 +288,8 @@ export async function POST(req: NextRequest) {
       deliveryLongitude: body.deliveryLocationPin?.longitude,
       expressFee: body.deliveryMethod === "DELIVERY" ? deliveryFee : undefined,
       notes: clip(body.notes, 500),
+      // Solo una palabra corta conocida; nico igual la valida contra su lista.
+      trafficSource: /^[a-z_]{2,20}$/.test(body.trafficSource ?? "") ? body.trafficSource : undefined,
       items: nicoItems,
       // El total del pedido es solo la comida: en nico el express va aparte,
       // fuera del total de venta.

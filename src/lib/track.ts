@@ -44,27 +44,36 @@ function bucketOf(referrer: string): string {
 
 /**
  * Links de anuncios pagados: `?src=anuncio-almuerzo` / `?src=anuncio-cena`.
- * Solo se aceptan estos valores fijos (nada que pueda traer datos de nadie) y
- * se recuerdan en la pestaña, para que el carrito y el pago de esa visita
- * también cuenten para el anuncio aunque el referrer ya sea el propio sitio.
+ * Solo se aceptan estos valores fijos (nada que pueda traer datos de nadie).
  */
 const AD_SOURCES: Record<string, string> = {
   "anuncio-almuerzo": "ad_lunch",
   "anuncio-cena": "ad_dinner",
 };
-const AD_KEY = "ilcapo:src";
+const SOURCE_KEY = "ilcapo:src";
 
-function adSource(): string | null {
+/**
+ * De dónde llegó esta visita, fijado en la primera pantalla y recordado en la
+ * pestaña: el carrito, el pago y el pedido de esa visita cuentan para el mismo
+ * origen aunque después el referrer sea el propio sitio o la pasarela de pago.
+ * Un link de anuncio siempre gana.
+ */
+export function trafficSource(): string {
+  if (typeof window === "undefined") return "direct";
   try {
     const param = new URLSearchParams(location.search).get("src");
-    const fromUrl = param ? AD_SOURCES[param] : undefined;
-    if (fromUrl) {
-      sessionStorage.setItem(AD_KEY, fromUrl);
-      return fromUrl;
+    const fromAd = param ? AD_SOURCES[param] : undefined;
+    if (fromAd) {
+      sessionStorage.setItem(SOURCE_KEY, fromAd);
+      return fromAd;
     }
-    return sessionStorage.getItem(AD_KEY);
+    const saved = sessionStorage.getItem(SOURCE_KEY);
+    if (saved) return saved;
+    const bucket = bucketOf(document.referrer);
+    sessionStorage.setItem(SOURCE_KEY, bucket);
+    return bucket;
   } catch {
-    return null;
+    return bucketOf(typeof document === "undefined" ? "" : document.referrer);
   }
 }
 
@@ -82,7 +91,7 @@ export function track(metric: Metric, options?: { once?: boolean }): void {
       sessionStorage.setItem(key, "1");
     }
 
-    const body = JSON.stringify({ metric, source: adSource() ?? bucketOf(document.referrer) });
+    const body = JSON.stringify({ metric, source: trafficSource() });
 
     // `sendBeacon` sobrevive a que el usuario cierre o navegue justo después,
     // que es exactamente cuando se pierden las métricas interesantes.
