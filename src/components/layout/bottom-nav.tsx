@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Pizza, User, Factory, Gamepad2 } from "lucide-react";
+import { Pizza, User, Gamepad2 } from "lucide-react";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { WHATSAPP_URL } from "@/lib/contact";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,6 @@ export function BottomNav() {
   // al mismo sitio y se marcan juntos.
   const isHome = pathname === "/";
   const isMenu = isHome;
-  const isFactory = pathname.startsWith("/factory");
   const isLogin = pathname.startsWith("/cuenta");
 
   return (
@@ -75,7 +74,7 @@ export function BottomNav() {
           {/* Items left + right con espacio reservado en el centro para el logo */}
           <div className="flex h-full items-center">
 
-            {/* Izquierda — Menú + Factory */}
+            {/* Izquierda — Menú (Factory desactivado: ver app/factory/layout.tsx) */}
             <div className="flex flex-1 items-center justify-start gap-1">
               <Link
                 href="/"
@@ -86,16 +85,6 @@ export function BottomNav() {
               >
                 <Pizza className="h-5 w-5" />
                 Menú
-              </Link>
-              <Link
-                href="/factory"
-                className={cn(
-                  "flex flex-col items-center gap-0.5 px-2.5 py-2 transition-colors text-xs",
-                  isFactory ? "text-primary" : "text-foreground/50 hover:text-foreground"
-                )}
-              >
-                <Factory className="h-5 w-5" />
-                Factory
               </Link>
             </div>
 

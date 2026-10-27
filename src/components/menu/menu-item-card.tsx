@@ -6,6 +6,7 @@ import { Plus, Minus, Pizza } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/cart";
 import { ModifierSelector } from "./modifier-selector";
+import { ProductDetail } from "./product-detail";
 import type { MenuItem, CartModifierGroup } from "@/types";
 
 interface Props {
@@ -22,6 +23,8 @@ function promoSticker(name: string): string {
 
 export function MenuItemCard({ item, variant = "default" }: Props) {
   const [modifierOpen, setModifierOpen] = useState(false);
+  // Vista a pantalla completa (al tocar la foto, el nombre o la descripción)
+  const [detailOpen, setDetailOpen] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const items = useCartStore((s) => s.items);
@@ -78,6 +81,11 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
     if (plainLine) updateQuantity(plainLine.cartId, plainLine.quantity - 1); // 0 → elimina
   }
 
+  function openConfig() {
+    setDetailOpen(false);
+    setModifierOpen(true);
+  }
+
   function handleModifierConfirm(
     lines: { modifiers: CartModifierGroup[]; quantity: number }[]
   ) {
@@ -99,7 +107,7 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
         <Button
           size="sm"
           className="relative h-8 gap-1 rounded-full bg-primary px-4 hover:bg-primary/90"
-          onClick={() => setModifierOpen(true)}
+          onClick={openConfig}
         >
           <Plus className="h-4 w-4" />
           Agregar
@@ -148,13 +156,45 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
       {/* Extras opcionales: acceso al configurador sin forzarlo */}
       {!needsConfig && hasExtras && (
         <button
-          onClick={() => setModifierOpen(true)}
+          onClick={openConfig}
           className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
         >
           Personalizar
         </button>
       )}
     </div>
+  );
+
+  const overlays = (
+    <>
+      <ProductDetail
+        item={item}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        priceGroup={priceGroup}
+        action={action}
+        isArt={variant === "promo" && !!item.imageUrl}
+      />
+      {(needsConfig || hasExtras) && (
+        <ModifierSelector
+          item={item}
+          open={modifierOpen}
+          onClose={() => setModifierOpen(false)}
+          onConfirm={handleModifierConfirm}
+        />
+      )}
+    </>
+  );
+
+  const openDetail = () => setDetailOpen(true);
+  // Capa invisible sobre la foto que abre la vista completa (el botón queda por encima).
+  const photoTrigger = (
+    <button
+      type="button"
+      onClick={openDetail}
+      className="absolute inset-0 cursor-pointer"
+      aria-label={`Ver ${item.name}`}
+    />
   );
 
   // El precio más bajo cuando lo define el tamaño: en la promo se muestra "desde".
@@ -175,6 +215,7 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
               sizes="(max-width: 640px) 85vw, 340px"
               className="object-cover"
             />
+            {photoTrigger}
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/75 px-3 py-2 backdrop-blur-sm">
               <div className="min-w-0">
                 <h3 className="sr-only">{item.name}</h3>
@@ -189,14 +230,7 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
           </div>
         </div>
 
-        {(needsConfig || hasExtras) && (
-          <ModifierSelector
-            item={item}
-            open={modifierOpen}
-            onClose={() => setModifierOpen(false)}
-            onConfirm={handleModifierConfirm}
-          />
-        )}
+        {overlays}
       </>
     );
   }
@@ -222,8 +256,10 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
             )}
             {/* Degradado para que el texto se lea sobre cualquier foto. */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-            {/* Todo abajo: si la foto es un arte (logo, título), arriba queda limpio. */}
-            <div className="absolute inset-x-0 bottom-0 p-4">
+            {photoTrigger}
+            {/* Todo abajo: si la foto es un arte (logo, título), arriba queda limpio.
+                Los textos dejan pasar el toque a la capa de la foto; el botón no. */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
               <div className="mb-2 flex items-center gap-2">
                 <span className="-rotate-3 rounded-md bg-primary px-2.5 py-0.5 text-sm font-black uppercase tracking-tight text-primary-foreground shadow-lg">
                   {promoSticker(item.name)}
@@ -244,20 +280,13 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
                   ₡{fromPrice.toLocaleString("es-CR")}
                 </p>
                 {/* Sobre la foto: el control va en una píldora blanca para que se lea. */}
-                <div className="rounded-full bg-white/95 p-1 shadow-lg">{action}</div>
+                <div className="pointer-events-auto rounded-full bg-white/95 p-1 shadow-lg">{action}</div>
               </div>
             </div>
           </div>
         </div>
 
-        {(needsConfig || hasExtras) && (
-          <ModifierSelector
-            item={item}
-            open={modifierOpen}
-            onClose={() => setModifierOpen(false)}
-            onConfirm={handleModifierConfirm}
-          />
-        )}
+        {overlays}
       </>
     );
   }
@@ -280,16 +309,19 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
               <Pizza className="h-10 w-10" />
             </div>
           )}
+          {photoTrigger}
         </div>
 
-        {/* Info */}
+        {/* Info — nombre y descripción abren la vista completa */}
         <div className="p-3.5">
-          <p className="text-sm font-semibold leading-tight">{item.name}</p>
-          {item.description && (
-            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-              {item.description}
-            </p>
-          )}
+          <button type="button" onClick={openDetail} className="block w-full cursor-pointer text-left">
+            <p className="text-sm font-semibold leading-tight">{item.name}</p>
+            {item.description && (
+              <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                {item.description}
+              </p>
+            )}
+          </button>
 
           {priceGroup ? (
             // Precio definido por tamaño: mostramos las opciones con su precio
@@ -322,14 +354,7 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
         </div>
       </div>
 
-      {(needsConfig || hasExtras) && (
-        <ModifierSelector
-          item={item}
-          open={modifierOpen}
-          onClose={() => setModifierOpen(false)}
-          onConfirm={handleModifierConfirm}
-        />
-      )}
+      {overlays}
     </>
   );
 }
