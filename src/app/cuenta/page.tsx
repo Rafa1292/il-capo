@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { useProfileStore } from "@/store/profile";
 import { getLastOrder, lastOrderUrl } from "@/lib/last-order";
 import { GamesWallet } from "@/components/account/games-wallet";
+import { SantaHat } from "@/components/account/santa-hat";
 
 interface SessionInfo {
   email: string;
@@ -190,19 +191,22 @@ function CuentaContent() {
           </div>
         ) : session ? (
           <div className="flex items-center gap-3">
-            {session.picture ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={session.picture}
-                alt=""
-                className="h-10 w-10 rounded-full"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-5 w-5 text-primary" />
-              </div>
-            )}
+            <div className="relative shrink-0">
+              {session.picture ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={session.picture}
+                  alt=""
+                  className="h-10 w-10 rounded-full"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-5 w-5 text-primary" />
+                </div>
+              )}
+              <SantaHat width={30} className="left-[5px] -top-3" />
+            </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{session.name || session.email}</p>
               <p className="text-xs text-muted-foreground truncate">

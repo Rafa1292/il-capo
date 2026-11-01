@@ -4,8 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Pizza, User } from "lucide-react";
+import { SantaHat } from "@/components/account/santa-hat";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { WHATSAPP_URL } from "@/lib/contact";
+import { isChristmasSeason } from "@/lib/season";
 import { cn } from "@/lib/utils";
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -25,6 +27,7 @@ export function BottomNav() {
   // al mismo sitio y se marcan juntos.
   const isMenu = pathname === "/";
   const isLogin = pathname.startsWith("/cuenta");
+  const christmas = isChristmasSeason();
 
   // Juegos: sin botón por ahora (oct-2026). La ruta /juegos sigue andando desde
   // el QR del ticket y el link de WhatsApp del pedido aceptado.
@@ -33,17 +36,17 @@ export function BottomNav() {
       <div className="relative max-w-2xl mx-auto h-16 px-2">
 
         {/* Logo bump — sale por encima del navbar */}
-        <div className="absolute left-1/2 -translate-x-1/2 -top-6 z-10">
+        <div className={cn("absolute left-1/2 -translate-x-1/2 z-10", christmas ? "-top-10" : "-top-6")}>
           <Link
             href="/"
             aria-label="Inicio"
             className="group block transition-transform duration-200 ease-out hover:-translate-y-1 hover:scale-105 active:scale-95"
           >
             <Image
-              src="/logo-home.png"
+              src={christmas ? "/logo-home-christmas.png" : "/logo-home.png"}
               alt="il Capo"
               width={104}
-              height={88}
+              height={christmas ? 104 : 88}
               className="object-contain drop-shadow-md transition-[filter,drop-shadow] duration-200 group-hover:drop-shadow-xl group-hover:brightness-105"
               priority
             />
@@ -90,7 +93,10 @@ export function BottomNav() {
                 isLogin ? "text-primary" : "text-foreground/50 hover:text-foreground"
               )}
             >
-              <User className="h-5 w-5" />
+              <span className="relative">
+                <User className="h-5 w-5" />
+                <SantaHat width={17} className="left-[1.5px] -top-2" />
+              </span>
               Cuenta
             </Link>
           </div>

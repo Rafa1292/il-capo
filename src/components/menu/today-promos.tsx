@@ -1,4 +1,5 @@
 import { Flame, UtensilsCrossed } from "lucide-react";
+import { ChristmasWallSanta } from "@/components/menu/christmas-decor";
 import { MenuItemCard } from "@/components/menu/menu-item-card";
 import { DragScroller } from "@/components/ui/drag-scroller";
 import type { MenuItem } from "@/types";
@@ -8,6 +9,8 @@ interface Props {
   /** Título del carrusel; por defecto "Promo"/"Promos" según la cantidad. */
   title?: string;
   icon?: "promo" | "lunch";
+  /** Temporada navideña: Santa sale de detrás de la primera tarjeta. */
+  wallSanta?: boolean;
 }
 
 /**
@@ -17,7 +20,7 @@ interface Props {
  * dentro de su horario y la carta se recalcula cada minuto, así que lo del día
  * desaparece solo fuera de hora.
  */
-export function TodayPromos({ items, title, icon = "promo" }: Props) {
+export function TodayPromos({ items, title, icon = "promo", wallSanta = false }: Props) {
   if (items.length === 0) return null;
   const Icon = icon === "lunch" ? UtensilsCrossed : Flame;
   return (
@@ -29,11 +32,19 @@ export function TodayPromos({ items, title, icon = "promo" }: Props) {
           </span>
           {title ?? (items.length === 1 ? "Promo" : "Promos")}
         </h2>
-        {items.length > 1 && <p className="text-xs text-muted-foreground">Deslizá para ver más →</p>}
+        {(items.length > 1 || wallSanta) && <p className="text-xs text-muted-foreground">Deslizá para ver más →</p>}
       </div>
       <DragScroller className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
+        {wallSanta && <ChristmasWallSanta />}
         {items.map((item) => (
-          <div key={item.id} className={items.length === 1 ? "w-full shrink-0" : "w-[85%] max-w-[340px] shrink-0 snap-start"}>
+          <div
+            key={item.id}
+            className={
+              items.length === 1 && !wallSanta
+                ? "w-full shrink-0"
+                : "relative z-[1] w-[85%] max-w-[340px] shrink-0 snap-start"
+            }
+          >
             <MenuItemCard item={item} variant="promo" />
           </div>
         ))}

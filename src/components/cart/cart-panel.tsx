@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ShoppingBag, Trash2, Minus, Plus, Gift } from "lucide-react";
+import { Trash2, Minus, Plus, Gift } from "lucide-react";
+import { CartIcon } from "./cart-icon";
 import { Button } from "@/components/ui/button";
 import { useCartStore, itemTotal } from "@/store/cart";
 import { GIFT, giftAvailableToday, isGift } from "@/lib/gift";
@@ -38,7 +39,7 @@ export function CartPanel() {
   if (items.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center py-12 px-4">
-        <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+        <CartIcon className="h-12 w-12 text-muted-foreground" />
         <p className="text-muted-foreground">Tu carrito está vacío</p>
         <p className="text-sm text-muted-foreground">Agrega productos desde el menú</p>
       </div>

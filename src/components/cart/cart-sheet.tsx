@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ShoppingBag } from "lucide-react";
+import { CartIcon } from "./cart-icon";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CartPanel } from "./cart-panel";
 import { useCartStore } from "@/store/cart";
@@ -35,7 +35,7 @@ export function CartSheet() {
   const triggerContent = (
     <>
       <span className="relative">
-        <ShoppingBag className="h-5 w-5" />
+        <CartIcon className="h-5 w-5" />
         {displayCount > 0 && (
           <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold tabular-nums text-white">
             {displayCount}

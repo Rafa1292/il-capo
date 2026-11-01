@@ -11,10 +11,16 @@ import { ClosedBanner } from "@/components/menu/closed-banner";
 import { GiftBanner } from "@/components/menu/gift-banner";
 import { TodayPromos } from "@/components/menu/today-promos";
 import { TrackVisit } from "@/components/menu/track-visit";
+import {
+  ChristmasClosing,
+  ChristmasGreeting,
+  ChristmasSnow,
+} from "@/components/menu/christmas-decor";
 import { RestaurantJsonLd } from "@/components/seo/json-ld";
 import { locationInfo } from "@/lib/business";
 import { getStoreStatus } from "@/lib/store-status";
 import { isGift } from "@/lib/gift";
+import { isChristmasSeason } from "@/lib/season";
 import type { Location } from "@/lib/locations";
 import type { MenuCategory } from "@/types";
 
@@ -76,9 +82,17 @@ export async function MenuView({ location, showLocationName }: Props) {
 
   const info = locationInfo(location.slug);
   const donde = info?.locality ?? location.name;
+  const christmas = isChristmasSeason();
+  const ornamentColor = christmas ? "text-[#b8912f]" : "text-primary/70";
 
   return (
-    <div>
+    <div className={christmas ? "xmas" : undefined}>
+      {christmas && (
+        <>
+          <div aria-hidden className="xmas-background fixed inset-0 -z-10" />
+          <ChristmasSnow />
+        </>
+      )}
       {/* La ficha de Google se arma acá, con el mismo horario que se pinta
           abajo: si viviera en la página serían dos consultas y podrían quedar
           diciendo cosas distintas. */}
@@ -99,10 +113,10 @@ export async function MenuView({ location, showLocationName }: Props) {
       <div className="flex items-center justify-between gap-4 pb-6">
         <div className="flex items-center gap-3">
           <Image
-            src="/logo.png"
+            src={christmas ? "/logo-christmas.png" : "/logo.png"}
             alt="il Capo Pizzería"
             width={56}
-            height={56}
+            height={christmas ? 61 : 56}
             className="object-contain"
             priority
           />
@@ -131,8 +145,9 @@ export async function MenuView({ location, showLocationName }: Props) {
         ordersEnabled={status.ordersEnabled}
       />
       <GiftBanner />
+      {christmas && <ChristmasGreeting />}
       <TodayPromos items={lunch} title="Almuerzos" icon="lunch" />
-      <TodayPromos items={promos} />
+      <TodayPromos items={promos} wallSanta={christmas} />
 
       {categories.length === 0 && promos.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
@@ -147,7 +162,7 @@ export async function MenuView({ location, showLocationName }: Props) {
             </p>
             <div className="flex items-center gap-3 w-40">
               <span className="flex-1 border-t border-border" />
-              <span className="text-primary/60 text-[10px]">✦</span>
+              <span className={`text-[10px] ${ornamentColor}`}>✦</span>
               <span className="flex-1 border-t border-border" />
             </div>
           </div>
@@ -161,9 +176,9 @@ export async function MenuView({ location, showLocationName }: Props) {
                 <div className="mb-4 flex items-center gap-3">
                   <span className="h-px flex-1 bg-border" />
                   <h2 className="flex items-center gap-2 text-base font-bold uppercase tracking-[0.15em] text-foreground">
-                    <span className="text-[9px] text-primary/70">✦</span>
+                    <span className={`text-[9px] ${ornamentColor}`}>✦</span>
                     {category.name}
-                    <span className="text-[9px] text-primary/70">✦</span>
+                    <span className={`text-[9px] ${ornamentColor}`}>✦</span>
                   </h2>
                   <span className="h-px flex-1 bg-border" />
                 </div>
@@ -181,6 +196,7 @@ export async function MenuView({ location, showLocationName }: Props) {
         </>
       )}
 
+      {christmas && <ChristmasClosing />}
       <AboutFooter schedule={status.schedule} />
     </div>
   );

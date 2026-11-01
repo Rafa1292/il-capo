@@ -206,7 +206,7 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
   if (variant === "promo" && item.imageUrl) {
     return (
       <>
-        <div className="overflow-hidden rounded-2xl shadow-lg">
+        <div data-promo-card className="overflow-hidden rounded-2xl shadow-lg">
           <div className="relative aspect-[4/5] w-full bg-muted">
             <Image
               src={item.imageUrl}
@@ -239,7 +239,7 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
     return (
       <>
         {/* Promo sin foto: nombre, precio y botón van encima del fondo. */}
-        <div className="overflow-hidden rounded-2xl shadow-lg">
+        <div data-promo-card className="overflow-hidden rounded-2xl shadow-lg">
           <div className="relative aspect-[4/5] w-full bg-muted">
             {item.imageUrl ? (
               <Image
@@ -293,7 +293,7 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
 
   return (
     <>
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div data-menu-card className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         {/* Foto (placeholder mientras no haya imageUrl) */}
         <div className="relative aspect-[16/10] w-full bg-muted">
           {item.imageUrl ? (

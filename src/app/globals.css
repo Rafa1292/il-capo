@@ -64,6 +64,100 @@
   }
 }
 
+/* Temporada navideña: la carta entra envuelta en .xmas */
+.xmas {
+  --card: oklch(0.995 0.008 85);
+  --border: oklch(0.86 0.04 85);
+  --muted: oklch(0.95 0.018 150);
+}
+
+.xmas-background {
+  background: linear-gradient(180deg, #f6e6df 0%, #f3ebdd 45%, #e3ebdd 100%);
+}
+
+/* Tarjetas de la carta: filo rojo y verde intercalado */
+.xmas .snap-start:nth-child(odd) [data-menu-card] {
+  border-top: 3px solid #a3000a;
+}
+.xmas .snap-start:nth-child(even) [data-menu-card] {
+  border-top: 3px solid #1f6b3c;
+}
+
+/* Tarjetas de arte: filo dorado fino */
+.xmas [data-promo-card] {
+  outline: 1px solid #c9a24b;
+}
+
+/* Brillo que cruza las letras del saludo cada pocos segundos */
+@keyframes xmas-shimmer {
+  0%, 35% { background-position: 130% 0; }
+  100% { background-position: -30% 0; }
+}
+
+.xmas-shimmer {
+  background-image: linear-gradient(105deg, #8f0a1f 42%, #f3d27a 49%, #fff8e1 50%, #f3d27a 51%, #8f0a1f 58%);
+  background-size: 250% 100%;
+  background-position: 130% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: xmas-shimmer 5s ease-in-out infinite;
+}
+
+@keyframes xmas-fall {
+  from { transform: translate3d(0, -20px, 0); }
+  to { transform: translate3d(0, calc(100vh + 20px), 0); }
+}
+
+@keyframes xmas-sway {
+  from { transform: translate3d(calc(var(--xmas-sway) * -1), 0, 0) rotate(-40deg); }
+  to { transform: translate3d(var(--xmas-sway), 0, 0) rotate(40deg); }
+}
+
+/* Dos animaciones: el copo cae afuera y se mece adentro */
+.xmas-flake {
+  position: absolute;
+  top: 0;
+  animation: xmas-fall linear infinite;
+  will-change: transform;
+}
+
+.xmas-flake-core {
+  display: block;
+  /* Grumos que se funden sin borde; el halo gris azulado los separa del fondo claro */
+  background:
+    radial-gradient(circle at 38% 40%, #fff 0%, rgb(255 255 255 / 0.85) 28%, rgb(255 255 255 / 0) 62%),
+    radial-gradient(circle at 66% 58%, rgb(255 255 255 / 0.95) 0%, rgb(255 255 255 / 0) 48%),
+    radial-gradient(circle at 50% 50%, rgb(165 185 200 / 0.28) 0%, rgb(165 185 200 / 0) 70%);
+  animation: xmas-sway ease-in-out infinite alternate;
+}
+
+/* Otros grumos, para que no haya dos copos con la misma forma */
+.xmas-flake:nth-child(3n + 1) .xmas-flake-core {
+  background:
+    radial-gradient(circle at 60% 34%, #fff 0%, rgb(255 255 255 / 0.8) 26%, rgb(255 255 255 / 0) 58%),
+    radial-gradient(circle at 34% 66%, rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0) 46%),
+    radial-gradient(circle at 72% 72%, rgb(255 255 255 / 0.65) 0%, rgb(255 255 255 / 0) 32%),
+    radial-gradient(circle at 50% 50%, rgb(165 185 200 / 0.28) 0%, rgb(165 185 200 / 0) 70%);
+}
+
+.xmas-flake:nth-child(3n + 2) .xmas-flake-core {
+  border-radius: 62% 38% 55% 45% / 45% 60% 40% 55%;
+  background:
+    radial-gradient(ellipse 60% 42% at 44% 50%, #fff 0%, rgb(255 255 255 / 0.7) 45%, rgb(255 255 255 / 0) 100%),
+    radial-gradient(circle at 50% 50%, rgb(165 185 200 / 0.26) 0%, rgb(165 185 200 / 0) 70%);
+}
+
+/* En celular, la mitad de copos: la pantalla es angosta y gasta menos batería */
+@media (max-width: 767px) {
+  .xmas-flake:nth-child(even) { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xmas-snow { display: none; }
+  .xmas-shimmer { animation: none; }
+}
+
 
 
 
