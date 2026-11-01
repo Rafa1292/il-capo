@@ -201,8 +201,8 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
   const fromPrice = priceGroup ? Math.min(...priceGroup.elements.map((e) => e.price)) : item.price;
 
   // Promo con arte: el arte ya trae título, precio y textos (y cada arquetipo
-  // los ubica distinto), así que se muestra entero y solo se le suma una barra
-  // fina abajo con el precio y el botón, que tapa apenas el pie del arte.
+  // los ubica distinto), así que se muestra entero y el precio y el botón van en
+  // una barra debajo, sin taparlo: varios arquetipos tienen el precio en el pie.
   if (variant === "promo" && item.imageUrl) {
     return (
       <>
@@ -216,17 +216,17 @@ export function MenuItemCard({ item, variant = "default" }: Props) {
               className="object-cover"
             />
             {photoTrigger}
-            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/75 px-3 py-2 backdrop-blur-sm">
-              <div className="min-w-0">
-                <h3 className="sr-only">{item.name}</h3>
-                <p className="text-lg font-black leading-none text-white">
-                  {priceGroup && <span className="mr-1 text-[10px] font-medium text-white/70">desde</span>}
-                  ₡{fromPrice.toLocaleString("es-CR")}
-                </p>
-                {item.schedule && <p className="mt-0.5 truncate text-[10px] text-white/70">{item.schedule}</p>}
-              </div>
-              {action}
+          </div>
+          <div className="flex items-center justify-between gap-2 bg-[#121212] px-3 py-2">
+            <div className="min-w-0">
+              <h3 className="sr-only">{item.name}</h3>
+              <p className="text-lg font-black leading-none text-white">
+                {priceGroup && <span className="mr-1 text-[10px] font-medium text-white/70">desde</span>}
+                ₡{fromPrice.toLocaleString("es-CR")}
+              </p>
+              {item.schedule && <p className="mt-0.5 truncate text-[10px] text-white/70">{item.schedule}</p>}
             </div>
+            {action}
           </div>
         </div>
 
