@@ -27,6 +27,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily" as const,
       priority: 0.9,
     })),
+    // Temporada: Google la puede mostrar a quien busca "cenas navideñas Grecia".
+    {
+      url: absoluteUrl("/cenas"),
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    },
     // Las legales cambian casi nunca, pero tienen que ser rastreables: Google
     // las exige para publicar la pantalla de consentimiento del login.
     ...["/privacidad", "/terminos"].map((path) => ({

@@ -9,6 +9,7 @@ import { DragScroller } from "@/components/ui/drag-scroller";
 import { PausedBanner } from "@/components/menu/paused-banner";
 import { ClosedBanner } from "@/components/menu/closed-banner";
 import { GiftBanner } from "@/components/menu/gift-banner";
+import { DinnersBanner } from "@/components/menu/dinners-banner";
 import { TodayPromos } from "@/components/menu/today-promos";
 import { TrackVisit } from "@/components/menu/track-visit";
 import {
@@ -146,6 +147,7 @@ export async function MenuView({ location, showLocationName }: Props) {
       />
       <GiftBanner />
       {christmas && <ChristmasGreeting />}
+      <DinnersBanner />
       <TodayPromos items={lunch} title="Almuerzos" icon="lunch" />
       <TodayPromos items={promos} wallSanta={christmas} />
 
