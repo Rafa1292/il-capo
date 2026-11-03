@@ -60,7 +60,12 @@ export const DINNERS: ChristmasDinner[] = [
   },
 ];
 
-export const DINNER_SIDES = "papas al romero, ensalada verde, arroz navideño y salsa de mora o guayaba";
+export const DINNER_SIDE_LIST = [
+  "Papas al romero",
+  "Ensalada verde",
+  "Arroz navideño",
+  "Salsa de mora o guayaba",
+];
 export const PICKUP_TEXT = "24 o 31 de diciembre, de 11 a.m. a 5 p.m., en el local";
 
 /** Link a WhatsApp con el mensaje ya escrito; sin plato, la consulta general. */

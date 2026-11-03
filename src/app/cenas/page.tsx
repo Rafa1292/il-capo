@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import {
   DINNERS,
-  DINNER_SIDES,
+  DINNER_SIDE_LIST,
   PICKUP_TEXT,
   dinnerReservationsOpen,
   dinnerWhatsAppUrl,
@@ -39,9 +39,16 @@ export default function CenasPage() {
       </Link>
 
       <h1 className="text-3xl font-bold tracking-tight">Cenas navideñas</h1>
-      <p className="mt-2 text-muted-foreground">
-        Para retirar el {PICKUP_TEXT}. Todas con {DINNER_SIDES}, o solas.
-      </p>
+      <p className="mt-2 text-muted-foreground">Para retirar el {PICKUP_TEXT}.</p>
+
+      <div className="mt-4 rounded-xl border border-[#b8912f]/40 bg-[#b8912f]/10 px-4 py-3">
+        <p className="text-sm font-semibold">Acompañamientos:</p>
+        <ul className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 text-sm">
+          {DINNER_SIDE_LIST.map((side) => (
+            <li key={side}>• {side}</li>
+          ))}
+        </ul>
+      </div>
 
       {open ? (
         <a
@@ -92,7 +99,15 @@ export default function CenasPage() {
         ))}
       </div>
 
-      <section className="mt-10 rounded-xl border border-border bg-card p-5">
+      <div className="mt-8 rounded-xl border border-dashed border-[#b8912f]/60 px-4 py-4 text-center">
+        <p className="font-semibold">¿No querés acompañamientos?</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          No hay problema: te vendemos solo el plato fuerte. La costilla BBQ va siempre con
+          acompañamientos.
+        </p>
+      </div>
+
+      <section className="mt-8 rounded-xl border border-border bg-card p-5">
         <h2 className="text-lg font-bold">¿Cómo reservar?</h2>
         <ol className="mt-3 space-y-2">
           {STEPS.map((step, i) => (
