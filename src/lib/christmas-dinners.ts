@@ -65,6 +65,7 @@ export const DINNER_SIDE_LIST = [
   "Ensalada verde",
   "Arroz navideño",
   "Salsa de mora o guayaba",
+  "Postre",
 ];
 export const PICKUP_TEXT = "24 o 31 de diciembre, de 11 a.m. a 5 p.m., en el local";
 
