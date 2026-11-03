@@ -11,6 +11,8 @@ export interface AppliedPromo {
   code: string;
   discount: number;
   label: string;
+  /** "No aplica a promociones ni almuerzos", si el código la trae. */
+  note?: string | null;
 }
 
 /**
@@ -94,6 +96,7 @@ export function PromoCodeField({
           <Tag className="h-4 w-4 text-green-700" />
           <span>
             <strong>{applied.code}</strong> · {applied.label}
+            {applied.note && <span className="block text-xs text-muted-foreground">{applied.note}</span>}
           </span>
         </span>
         <button type="button" onClick={remove} className="text-muted-foreground hover:text-foreground" aria-label="Quitar código">

@@ -13,16 +13,36 @@ export interface PromoQuote {
   /** Colones enteros que se restan de la comida (nunca del envío). */
   discount: number;
   label: string;
+  /** Aclaración ("No aplica a promociones ni almuerzos"), si el código la tiene. */
+  note?: string | null;
+  /** Colones del carrito que el código no descuenta. */
+  excluded?: number;
+}
+
+/** Línea del carrito para que nico sepa qué descuenta (los VUELVE- no tocan promos ni almuerzos). */
+export interface PromoLine {
+  saleItemId: string;
+  amount: number;
+}
+
+/** Líneas de un carrito ya valorado con precios reales. */
+export function promoLinesFrom(lines: { saleItemId: string; lineTotal: number }[]): PromoLine[] {
+  return lines.map((l) => ({ saleItemId: l.saleItemId, amount: l.lineTotal }));
 }
 
 /** El código no sirve (no existe, venció, ya se usó): el mensaje es para el cliente. */
 export class PromoError extends Error {}
 
-export async function quotePromo(code: string, subtotal: number, location: Location): Promise<PromoQuote> {
+export async function quotePromo(
+  code: string,
+  subtotal: number,
+  location: Location,
+  lines: PromoLine[]
+): Promise<PromoQuote> {
   try {
     const res = await nicoPost<{ data: PromoQuote }>(
       "/api/public/promo-codes/quote",
-      { code: code.trim().toUpperCase(), subtotal },
+      { code: code.trim().toUpperCase(), subtotal, lines },
       location
     );
     return res.data;

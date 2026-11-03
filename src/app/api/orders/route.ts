@@ -20,7 +20,7 @@ import { isPhoneVerifiedHere } from "@/lib/cash-verification";
 import { requireLocation } from "@/lib/api-location";
 import { reportIncident } from "@/lib/report-incident";
 import { sanitizeGift } from "@/lib/gift";
-import { cleanPromoCode, quotePromo, PromoError } from "@/lib/promo";
+import { cleanPromoCode, quotePromo, PromoError, type PromoLine } from "@/lib/promo";
 import type { Location } from "@/lib/locations";
 import type { PizzaBuilderCartSelection } from "@/types";
 
@@ -169,6 +169,7 @@ export async function POST(req: NextRequest) {
     const index = buildMenuIndex(catalog.categories);
 
     let total = 0;
+    const promoLines: PromoLine[] = [];
     const nicoItems = body.items.map((item) => {
       assertQuantity(item.quantity, MAX_LINE_QUANTITY, "artículos");
 
@@ -176,6 +177,7 @@ export async function POST(req: NextRequest) {
       const base = priceItemBase(item as PriceableItem, catalog, index);
       const modSum = priceItemModifiers(item as PriceableItem, index);
       total += (base + modSum) * item.quantity;
+      promoLines.push({ saleItemId: item.saleItemId, amount: (base + modSum) * item.quantity });
 
       // Reescribimos los precios de los modificadores con los autoritativos.
       const modifiers = (item.modifiers ?? []).map((g) => ({
@@ -210,7 +212,7 @@ export async function POST(req: NextRequest) {
     let promoProblem: string | null = null;
     if (promoCode) {
       try {
-        promoDiscount = (await quotePromo(promoCode, foodTotal, sede)).discount;
+        promoDiscount = (await quotePromo(promoCode, foodTotal, sede, promoLines)).discount;
         total -= promoDiscount;
       } catch (e) {
         if (!(e instanceof PromoError)) throw e;

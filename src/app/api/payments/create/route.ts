@@ -8,7 +8,7 @@ import { requireLocation } from "@/lib/api-location";
 import { resolveDeliveryFee, OutOfRangeError } from "@/lib/delivery";
 import { getStoreStatus } from "@/lib/store-status";
 import { closedNow } from "@/lib/schedule";
-import { cleanPromoCode, quotePromo, PromoError } from "@/lib/promo";
+import { cleanPromoCode, quotePromo, promoLinesFrom, PromoError, type PromoLine } from "@/lib/promo";
 
 interface CreateBody {
   items: PriceableItem[];
@@ -105,8 +105,11 @@ export async function POST(req: NextRequest) {
     // NUNCA se confía en un monto enviado por el cliente.
     const catalog = await getCatalog(sede);
     let total: number;
+    let lines: PromoLine[];
     try {
-      total = priceCart(body.items, catalog).total;
+      const priced = priceCart(body.items, catalog);
+      total = priced.total;
+      lines = promoLinesFrom(priced.lines);
     } catch (e) {
       if (e instanceof PricingError) {
         return NextResponse.json({ error: e.message }, { status: 400 });
@@ -122,7 +125,7 @@ export async function POST(req: NextRequest) {
     const promoCode = cleanPromoCode(body.promoCode);
     if (promoCode) {
       try {
-        total -= (await quotePromo(promoCode, total, sede)).discount;
+        total -= (await quotePromo(promoCode, total, sede, lines)).discount;
       } catch (e) {
         if (e instanceof PromoError) {
           return NextResponse.json({ error: e.message, code: "PROMO_INVALID" }, { status: 409 });

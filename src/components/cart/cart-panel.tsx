@@ -7,10 +7,14 @@ import { CartIcon } from "./cart-icon";
 import { Button } from "@/components/ui/button";
 import { useCartStore, itemTotal } from "@/store/cart";
 import { GIFT, giftAvailableToday, isGift } from "@/lib/gift";
+import { useCartPromo } from "@/components/checkout/use-cart-promo";
 
 export function CartPanel() {
   const { items, total, removeItem, updateQuantity, addItem } = useCartStore();
   const cartTotal = total();
+  const promoCode = useCartStore((s) => s.promoCode);
+  const { promo, error: promoError } = useCartPromo(promoCode, items);
+  const promoDiscount = promo?.discount ?? 0;
 
   // El día se mira en el navegador al abrir el carrito; el servidor lo vuelve
   // a revisar al confirmar el pedido.
@@ -138,9 +142,29 @@ export function CartPanel() {
       </div>
 
       <div className="border-t p-4 space-y-3">
+        {promo && promoDiscount > 0 && (
+          <div className="space-y-0.5 text-sm">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Subtotal</span>
+              <span>₡{cartTotal.toLocaleString("es-CR")}</span>
+            </div>
+            <div className="flex justify-between text-green-700 dark:text-green-400">
+              <span>
+                {promo.label} ({promo.code})
+              </span>
+              <span className="font-medium">−₡{promoDiscount.toLocaleString("es-CR")}</span>
+            </div>
+            {promo.note && <p className="text-xs text-muted-foreground">{promo.note}</p>}
+          </div>
+        )}
+        {promoCode && !promo && promoError && (
+          <p className="text-xs text-muted-foreground">
+            {promoCode}: {promoError}
+          </p>
+        )}
         <div className="flex justify-between font-semibold">
           <span>Total</span>
-          <span>₡{cartTotal.toLocaleString("es-CR")}</span>
+          <span>₡{(cartTotal - promoDiscount).toLocaleString("es-CR")}</span>
         </div>
         <Link href="/checkout" className="block">
           <Button className="w-full bg-primary hover:bg-primary/90">

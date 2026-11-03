@@ -4,7 +4,7 @@ import { priceCart, PricingError, type PriceableItem } from "@/lib/pricing";
 import { sanitizeGift } from "@/lib/gift";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { requireLocation } from "@/lib/api-location";
-import { cleanPromoCode, quotePromo, PromoError } from "@/lib/promo";
+import { cleanPromoCode, quotePromo, promoLinesFrom, PromoError } from "@/lib/promo";
 
 /**
  * POST /api/promo-code — { code, items }: cuánto descuenta el código sobre
@@ -31,9 +31,9 @@ export async function POST(req: NextRequest) {
     const { location, response } = await requireLocation();
     if (response) return response;
     const catalog = await getCatalog(location);
-    const subtotal = priceCart(sanitizeGift(body.items), catalog).total;
+    const priced = priceCart(sanitizeGift(body.items), catalog);
 
-    const quote = await quotePromo(code, subtotal, location);
+    const quote = await quotePromo(code, priced.total, location, promoLinesFrom(priced.lines));
     return NextResponse.json(quote);
   } catch (err) {
     if (err instanceof PromoError || err instanceof PricingError) {
