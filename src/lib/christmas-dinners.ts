@@ -30,7 +30,7 @@ export const DINNERS: ChristmasDinner[] = [
     serves: "Para 10 personas",
     image: "/cenas/lomo.jpg",
     price: "₡115.000",
-    priceNote: "con acompañamientos",
+    priceNote: "con acompañamientos y postre",
     alonePrice: "Solo el lomo: ₡95.000",
   },
   {
@@ -39,7 +39,7 @@ export const DINNERS: ChristmasDinner[] = [
     serves: "Para 10 personas",
     image: "/cenas/pierna.jpg",
     price: "₡115.000",
-    priceNote: "con acompañamientos",
+    priceNote: "con acompañamientos y postre",
     alonePrice: "Sola: ₡90.000",
   },
   {
@@ -48,9 +48,8 @@ export const DINNERS: ChristmasDinner[] = [
     serves: "Desde 1 kg",
     image: "/cenas/pierna-kilo.jpg",
     price: "₡34.000",
-    priceNote: "el kilo, con acompañamientos",
+    priceNote: "el kilo, con acompañamientos y postre para 4",
     alonePrice: "Sola: ₡28.000 el kilo",
-    note: "El combo con acompañamientos trae postre para 4.",
   },
   {
     slug: "costilla",
@@ -58,7 +57,7 @@ export const DINNERS: ChristmasDinner[] = [
     serves: "Mínimo 4 personas",
     image: "/cenas/costilla.jpg",
     price: "₡11.000",
-    priceNote: "por persona, con acompañamientos",
+    priceNote: "por persona, con acompañamientos y postre",
     alonePrice: "Solo con acompañamientos",
   },
 ];
