@@ -84,6 +84,7 @@ export default function CenasPage() {
                 <span className="text-sm text-muted-foreground">{dinner.priceNote}</span>
               </p>
               <p className="text-sm text-muted-foreground">{dinner.alonePrice}</p>
+              {dinner.note && <p className="mt-1 text-sm font-medium">{dinner.note}</p>}
               {open && (
                 <a
                   href={dinnerWhatsAppUrl(dinner)}

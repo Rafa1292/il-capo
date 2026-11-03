@@ -19,6 +19,8 @@ export interface ChristmasDinner {
   priceNote: string;
   /** Precio sin acompañamientos. */
   alonePrice: string;
+  /** Aclaración propia del plato, si la tiene. */
+  note?: string;
 }
 
 export const DINNERS: ChristmasDinner[] = [
@@ -48,6 +50,7 @@ export const DINNERS: ChristmasDinner[] = [
     price: "₡34.000",
     priceNote: "el kilo, con acompañamientos",
     alonePrice: "Sola: ₡28.000 el kilo",
+    note: "El combo con acompañamientos trae postre para 4.",
   },
   {
     slug: "costilla",
