@@ -68,11 +68,17 @@ export const DINNER_SIDE_LIST = [
 ];
 export const PICKUP_TEXT = "24 o 31 de diciembre, de 11 a.m. a 5 p.m., en el local";
 
-/** Link a WhatsApp con el mensaje ya escrito; sin plato, la consulta general. */
-export function dinnerWhatsAppUrl(dinner?: ChristmasDinner): string {
-  const text = dinner
-    ? `Hola, quiero reservar la cena navideña de ${dinner.name.toLowerCase()}`
-    : "Hola, quiero información de las cenas navideñas";
+/**
+ * Link a WhatsApp con el mensaje ya escrito: un plato, la consulta general o
+ * "custom", para quien quiere algo distinto a lo de la carta.
+ */
+export function dinnerWhatsAppUrl(dinner?: ChristmasDinner | "custom"): string {
+  const text =
+    dinner === "custom"
+      ? "Hola, quiero una cena navideña diferente a las de la página"
+      : dinner
+        ? `Hola, quiero reservar la cena navideña de ${dinner.name.toLowerCase()}`
+        : "Hola, quiero información de las cenas navideñas";
   return `${WHATSAPP_URL}?text=${encodeURIComponent(text)}`;
 }
 

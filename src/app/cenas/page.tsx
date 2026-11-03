@@ -124,6 +124,24 @@ export default function CenasPage() {
           Solo para retirar, no va por express.
         </p>
       </section>
+
+      {open && (
+        <section className="mt-8 rounded-xl border border-border bg-card p-5 text-center">
+          <h2 className="text-lg font-bold">¿Necesitás una opción diferente?</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Otra cantidad de personas, otro plato u otra combinación: contanos qué tenés en mente y
+            lo armamos juntos.
+          </p>
+          <a
+            href={dinnerWhatsAppUrl("custom")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-[#1f7a3a] px-5 py-3 font-semibold text-white hover:bg-[#19652f]"
+          >
+            <MessageCircle className="h-5 w-5" /> Hablemos por WhatsApp
+          </a>
+        </section>
+      )}
     </main>
   );
 }
