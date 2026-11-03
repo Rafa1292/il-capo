@@ -1,9 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { nicoGet, isBuildPrerender } from "@/lib/nico";
 import { MenuItemCard } from "@/components/menu/menu-item-card";
 import { CategoryNav } from "@/components/menu/category-nav";
-import { OpeningStatus } from "@/components/menu/opening-status";
 import { AboutFooter } from "@/components/menu/about-footer";
 import { DragScroller } from "@/components/ui/drag-scroller";
 import { PausedBanner } from "@/components/menu/paused-banner";
@@ -110,43 +108,33 @@ export async function MenuView({ location, showLocationName }: Props) {
         il Capo Pizzería en {donde} — carta y pedidos en línea
       </h1>
 
-      {/* Cabecera — logo y si están abiertos ahora mismo */}
-      <div className="flex items-center justify-between gap-4 pb-6">
-        <div className="flex items-center gap-3">
-          <Image
-            src={christmas ? "/logo-christmas.png" : "/logo.png"}
-            alt="il Capo Pizzería"
-            width={56}
-            height={christmas ? 61 : 56}
-            className="object-contain"
-            priority
-          />
-          {showLocationName && (
-            <Link
-              href="/?cambiar=1"
-              className="group flex flex-col leading-tight"
-              aria-label={`Sede ${location.name}. Tocá para cambiar`}
-            >
-              <span className="text-sm font-semibold tracking-tight group-hover:text-primary">
-                {location.name}
-              </span>
-              <span className="text-[10px] text-muted-foreground underline underline-offset-2">
-                cambiar sede
-              </span>
-            </Link>
-          )}
+      {/* Sin logo ni horario arriba: el logo ya está en la barra y el horario
+          al pie. Solo queda el cambio de sede cuando hay más de una. */}
+      {showLocationName && (
+        <div className="pb-4">
+          <Link
+            href="/?cambiar=1"
+            className="group inline-flex flex-col leading-tight"
+            aria-label={`Sede ${location.name}. Tocá para cambiar`}
+          >
+            <span className="text-sm font-semibold tracking-tight group-hover:text-primary">
+              {location.name}
+            </span>
+            <span className="text-[10px] text-muted-foreground underline underline-offset-2">
+              cambiar sede
+            </span>
+          </Link>
         </div>
-        <OpeningStatus schedule={status.schedule} />
-      </div>
+      )}
 
+      <GiftBanner />
+      {christmas && <ChristmasGreeting />}
       <PausedBanner status={status} />
       <ClosedBanner
         schedule={status.schedule}
         configured={status.scheduleConfigured}
         ordersEnabled={status.ordersEnabled}
       />
-      <GiftBanner />
-      {christmas && <ChristmasGreeting />}
       <DinnersBanner />
       <TodayPromos items={lunch} title="Almuerzos" icon="lunch" />
       <TodayPromos items={promos} wallSanta={christmas} />
