@@ -15,7 +15,7 @@ export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Cenas navideñas",
-  description: `Lomo relleno, pierna de cerdo, pollo entero y costilla BBQ para retirar en Grecia el ${PICKUP_TEXT.split(",")[0]}. Reservá por WhatsApp.`,
+  description: `Lomo relleno, pierna de cerdo, punta de solomo, pollo entero y costilla BBQ para retirar en Grecia el ${PICKUP_TEXT.split(",")[0]}. Reservá por WhatsApp.`,
   alternates: { canonical: "/cenas" },
   openGraph: { images: ["/cenas/portada.jpg"] },
 };

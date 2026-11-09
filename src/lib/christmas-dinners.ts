@@ -69,6 +69,15 @@ export const DINNERS: ChristmasDinner[] = [
     priceNote: "con acompañamientos y postre",
     alonePrice: "Solo: ₡20.000",
   },
+  {
+    slug: "punta-solomo",
+    name: "Punta de solomo",
+    serves: "Para 4 personas",
+    image: "/cenas/punta-solomo.jpg",
+    price: "₡52.000",
+    priceNote: "con acompañamientos y postre",
+    alonePrice: "Sola: ₡38.000",
+  },
 ];
 
 export const DINNER_SIDE_LIST = [
