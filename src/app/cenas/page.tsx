@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, MessageCircle } from "lucide-react";
+import { DinnerGrid } from "@/components/cenas/dinner-grid";
 import {
-  DINNERS,
   DINNER_SIDE_LIST,
   PICKUP_TEXT,
   dinnerReservationsOpen,
@@ -65,40 +64,7 @@ export default function CenasPage() {
         </p>
       )}
 
-      <div className="mt-8 grid gap-6 sm:grid-cols-2">
-        {DINNERS.map((dinner) => (
-          <article key={dinner.slug} className="overflow-hidden rounded-xl border border-border bg-card">
-            <Image
-              src={dinner.image}
-              alt={`${dinner.name}, cena navideña de il Capo`}
-              width={1122}
-              height={1402}
-              sizes="(min-width: 640px) 320px, 100vw"
-              className="h-auto w-full"
-            />
-            <div className="p-4">
-              <h2 className="text-lg font-bold">{dinner.name}</h2>
-              <p className="text-sm text-muted-foreground">{dinner.serves}</p>
-              <p className="mt-2">
-                <span className="text-xl font-bold">{dinner.price}</span>{" "}
-                <span className="text-sm text-muted-foreground">{dinner.priceNote}</span>
-              </p>
-              <p className="text-sm text-muted-foreground">{dinner.alonePrice}</p>
-              {dinner.note && <p className="mt-1 text-sm font-medium">{dinner.note}</p>}
-              {open && (
-                <a
-                  href={dinnerWhatsAppUrl(dinner)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-[#1f7a3a] px-4 py-2 text-sm font-semibold text-[#1f7a3a] hover:bg-[#1f7a3a]/10"
-                >
-                  <MessageCircle className="h-4 w-4" /> Reservar esta cena
-                </a>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
+      <DinnerGrid reservationsOpen={open} />
 
       <div className="mt-8 rounded-xl border border-dashed border-[#b8912f]/60 px-4 py-4 text-center">
         <p className="font-semibold">¿No querés acompañamientos?</p>
