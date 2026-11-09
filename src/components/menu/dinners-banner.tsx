@@ -37,7 +37,7 @@ export function DinnersBanner() {
         </p>
         <p className="mt-0.5 text-lg font-bold leading-tight">Cenas navideñas</p>
         <p className="mt-0.5 text-xs text-[#f6ead2]/80">
-          Lomo relleno, pierna y costilla BBQ para retirar el 24 o el 31.
+          Lomo relleno, pierna, pollo entero y costilla BBQ para retirar el 24 o el 31.
         </p>
       </div>
       <ChevronRight className="h-5 w-5 shrink-0 text-[#e2c477] transition-transform group-hover:translate-x-0.5" />

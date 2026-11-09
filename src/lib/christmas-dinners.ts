@@ -60,6 +60,15 @@ export const DINNERS: ChristmasDinner[] = [
     priceNote: "por persona, con acompañamientos y postre",
     alonePrice: "Solo con acompañamientos",
   },
+  {
+    slug: "pollo",
+    name: "Pollo entero",
+    serves: "Para 5 personas",
+    image: "/cenas/pollo.jpg",
+    price: "₡40.000",
+    priceNote: "con acompañamientos y postre",
+    alonePrice: "Solo: ₡20.000",
+  },
 ];
 
 export const DINNER_SIDE_LIST = [
