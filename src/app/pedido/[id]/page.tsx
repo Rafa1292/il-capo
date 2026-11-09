@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { OrderStatus } from "@/types";
 import { GamesInvite } from "@/components/order/games-invite";
+import { ArrivalButton } from "@/components/order/arrival-button";
 
 /**
  * Pedido ya aceptado por el restaurante. Lo que ve el cliente a partir de acá
@@ -230,6 +231,14 @@ function OrderStatusContent() {
           <p className="mt-1 text-xs text-muted-foreground">Decíselo al cajero cuando pases por tu pedido.</p>
         </div>
       )}
+
+      {/* Puerta cerrada por falta de personal: el cliente avisa que llegó. */}
+      {order.arrival?.enabled &&
+        order.status === "ACCEPTED" &&
+        order.kitchenStatus !== "DELIVERED" &&
+        order.kitchenStatus !== "CANCELLED" && (
+          <ArrivalButton orderId={order.id} token={token} arrival={order.arrival} onArrived={fetchStatus} />
+        )}
 
       {/* Mientras el pedido está en cocina o en camino: el momento de esperar. */}
       {order.status === "ACCEPTED" &&

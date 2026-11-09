@@ -155,6 +155,12 @@ export type KitchenStatus =
   | "DELIVERED"
   | "CANCELLED";
 
+export interface OrderArrival {
+  enabled: boolean;
+  /** NONE = no avisó · WAITING = cocina avisada · ACKNOWLEDGED = ya sale. */
+  state: "NONE" | "WAITING" | "ACKNOWLEDGED";
+}
+
 export interface OrderStatus {
   id: string;
   status: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
@@ -169,6 +175,8 @@ export interface OrderStatus {
   /** Código de descuento usado en el checkout y lo que descontó. */
   promoCode?: string | null;
   promoDiscount?: number | null;
+  /** Botón "Estoy aquí": nico lo habilita con el modo "Estoy solo" de cocina. */
+  arrival?: OrderArrival | null;
   customerName: string;
   deliveryMethod: DeliveryMethod;
   estimatedTotal: number;
