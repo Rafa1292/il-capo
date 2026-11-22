@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Pizza, User } from "lucide-react";
+import { Gamepad2, Pizza, User } from "lucide-react";
 import { SantaHat } from "@/components/account/santa-hat";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { WHATSAPP_URL } from "@/lib/contact";
@@ -29,9 +29,22 @@ export function BottomNav() {
   const isLogin = pathname.startsWith("/cuenta");
   const christmas = isChristmasSeason();
 
-  // Juegos: sin botón por ahora (oct-2026). La ruta /juegos sigue andando desde
-  // el QR del ticket y el link de WhatsApp del pedido aceptado.
   return (
+    <>
+    {/* Juegos — círculo flotante a la izquierda, arriba de la barra (en la barra
+        no entra un quinto ítem sin quedar debajo del logo). Va a /juegos (ruta
+        del servidor que redirige a los juegos de nico con pase fresco): <a> y no
+        <Link>, y en otra pestaña para no perder el carrito. */}
+    <a
+      href="/juegos"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="fixed bottom-20 left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-[transform,background-color] hover:bg-primary/90 active:scale-95"
+      aria-label="Juegos"
+      title="Juegos"
+    >
+      <Gamepad2 className="h-6 w-6" />
+    </a>
     <div className="fixed bottom-0 inset-x-0 z-40 bg-background border-t border-border">
       <div className="relative max-w-2xl mx-auto h-16 px-2">
 
@@ -104,5 +117,6 @@ export function BottomNav() {
         </div>
       </div>
     </div>
+    </>
   );
 }
