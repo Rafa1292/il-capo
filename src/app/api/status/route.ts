@@ -21,6 +21,7 @@ export async function GET() {
       pausedNote: status.pausedNote,
       closed: shut.closed,
       opensAt: shut.next,
+      sinpe: status.sinpe,
     },
     { headers: { "Cache-Control": "no-store" } }
   );

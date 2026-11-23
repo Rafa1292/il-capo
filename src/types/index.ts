@@ -181,4 +181,7 @@ export interface OrderStatus {
   deliveryMethod: DeliveryMethod;
   estimatedTotal: number;
   createdAt: string;
+  paymentMethodHint?: "CASH" | "CARD" | "SINPE" | null;
+  /** SINPE directo pendiente: a qué número mandarlo y cuánto (envío incluido). */
+  sinpePayment?: { phone: string; holder: string; amount: number } | null;
 }

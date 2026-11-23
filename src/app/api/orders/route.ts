@@ -58,7 +58,7 @@ interface ConfirmBody {
   deliveryMethod: "TAKEOUT" | "DELIVERY";
   deliveryAddress?: string;
   /** CASH = se cobra al entregar; no pasa por Tilopay. */
-  paymentMethod?: "CASH" | "CARD";
+  paymentMethod?: "CASH" | "CARD" | "SINPE";
   /** Pin que marcó el cliente en el mapa: define la zona y el costo del envío. */
   deliveryLocationPin?: { latitude: number; longitude: number } | null;
   notes?: string;
@@ -123,6 +123,12 @@ export async function POST(req: NextRequest) {
     // Efectivo: no hay cobro en línea, así que no hay referencia de pago que
     // verificar. La idempotencia se apoya en una referencia propia.
     const isCash = body.paymentMethod === "CASH";
+    // SINPE directo al negocio: el pedido entra primero y el cliente manda el
+    // SINPE después, con el pedido ya aceptado por nico (si la plata se manda
+    // antes y el pedido rebota, queda plata sin pedido). El cajero confirma en
+    // el banco antes de aceptar. Igual que el efectivo, no hay cobro en línea.
+    const isSinpe = body.paymentMethod === "SINPE";
+    const isOffline = isCash || isSinpe;
 
     // El interruptor tiene que estar acá y no solo en la pantalla: esconder un
     // botón no impide que alguien llame al endpoint a mano.
@@ -134,6 +140,9 @@ export async function POST(req: NextRequest) {
     }
     if (isCash && !orderNumber) {
       orderNumber = `CASH-${crypto.randomUUID()}`;
+    }
+    if (isSinpe && !orderNumber) {
+      orderNumber = `SINPE-${crypto.randomUUID()}`;
     }
 
     // ── Validaciones básicas ──
@@ -216,7 +225,7 @@ export async function POST(req: NextRequest) {
         total -= promoDiscount;
       } catch (e) {
         if (!(e instanceof PromoError)) throw e;
-        if (isCash) return NextResponse.json({ error: e.message, code: "PROMO_INVALID" }, { status: 409 });
+        if (isOffline) return NextResponse.json({ error: e.message, code: "PROMO_INVALID" }, { status: 409 });
         promoProblem = `El código ${promoCode} ya no sirve: ${e.message}`;
       }
     }
@@ -247,7 +256,10 @@ export async function POST(req: NextRequest) {
     // exige es que el número esté comprobado en este dispositivo; nico lo vuelve
     // a comprobar por su cuenta y rechaza si no.
     let tx: Awaited<ReturnType<typeof consultPayment>> = null;
-    if (isCash) {
+    if (isSinpe) {
+      // Nada que verificar acá: nico rechaza si la sede no publicó su número
+      // (SINPE_NOT_ENABLED) y el cajero no acepta sin ver la plata en el banco.
+    } else if (isCash) {
       if (!(await isPhoneVerifiedHere(body.customerPhone))) {
         return NextResponse.json(
           { error: "Necesitamos verificar tu número", code: "CASH_NOT_VERIFIED" },
@@ -300,7 +312,11 @@ export async function POST(req: NextRequest) {
       ...(promoCode && !promoProblem ? { promoCode, promoDiscount } : {}),
       // El cajero necesita saberlo antes de despachar: si es efectivo, el
       // mensajero sale con vuelto.
-      paymentMethodHint: isCash ? ("CASH" as const) : ("CARD" as const),
+      paymentMethodHint: isCash
+        ? ("CASH" as const)
+        : isSinpe
+          ? ("SINPE" as const)
+          : ("CARD" as const),
       payment: tx
         ? {
             provider: "tilopay",

@@ -19,12 +19,15 @@ export interface StoreStatus {
   schedule: Schedule;
   /** El horario lo publicó la sede en nico (si no, es el de respaldo y no frena nada). */
   scheduleConfigured: boolean;
+  /** SINPE Móvil directo al negocio. Null = la sede no lo ofrece. */
+  sinpe: { phone: string; holder: string } | null;
 }
 
 interface RawStatus {
   ordersEnabled: boolean;
   pausedNote: string | null;
   schedule?: RawScheduleDay[] | null;
+  sinpe?: { phone: string; holder: string } | null;
 }
 
 const FALLBACK: StoreStatus = {
@@ -32,6 +35,8 @@ const FALLBACK: StoreStatus = {
   pausedNote: null,
   schedule: DEFAULT_SCHEDULE,
   scheduleConfigured: false,
+  // Sin nico no se sabe a qué número mandar: no se ofrece SINPE.
+  sinpe: null,
 };
 
 export async function getStoreStatus(location: Location): Promise<StoreStatus> {
@@ -51,6 +56,7 @@ export async function getStoreStatus(location: Location): Promise<StoreStatus> {
       pausedNote: data.pausedNote,
       schedule: parseSchedule(data.schedule),
       scheduleConfigured: data.schedule != null,
+      sinpe: data.sinpe ?? null,
     };
   } catch {
     // Si nico no responde, se asume abierto y con el horario de respaldo. Es lo

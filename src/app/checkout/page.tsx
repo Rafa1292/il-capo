@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { UtensilsCrossed, Bike, ShoppingCart, MapPin, CreditCard, Banknote } from "lucide-react";
+import { UtensilsCrossed, Bike, ShoppingCart, MapPin, CreditCard, Banknote, Smartphone } from "lucide-react";
 import { useCartStore, itemTotal } from "@/store/cart";
 import { useProfileStore } from "@/store/profile";
 import { LocationPicker, type PickedLocation } from "@/components/checkout/location-picker";
@@ -19,7 +19,7 @@ import { track, trafficSource } from "@/lib/track";
 import { VoucherNotice } from "@/components/checkout/voucher-notice";
 import { PromoCodeField, type AppliedPromo } from "@/components/checkout/promo-code-field";
 
-type PaymentMethod = "CARD" | "CASH";
+type PaymentMethod = "CARD" | "CASH" | "SINPE";
 
 /**
  * El efectivo exige que el cliente verifique su número: manda un código por
@@ -74,11 +74,14 @@ export default function CheckoutPage() {
   const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
   /** Cerrado ahora: se pide al entrar para no dejar llenar todo y avisar al final. */
   const [closed, setClosed] = useState<{ opensAt: string | null } | null>(null);
+  /** SINPE directo al negocio: solo si la sede publicó su número en nico. */
+  const [sinpe, setSinpe] = useState<{ phone: string; holder: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/status")
       .then((r) => r.json())
       .then((j) => {
+        setSinpe(j?.sinpe ?? null);
         if (!j?.closed) return;
         setClosed({ opensAt: j.opensAt ?? null });
         track("STORE_CLOSED", { once: true });
@@ -271,14 +274,15 @@ export default function CheckoutPage() {
       profile.setProfile({ name: name.trim(), phone: phone.trim(), email: email.trim() });
       if (deliveryMethod === "DELIVERY") profile.rememberAddress(address);
 
-      // Efectivo: el pedido se registra de una. No hay pasarela de por medio
-      // porque el cobro ocurre al entregar.
-      if (paymentMethod === "CASH") {
+      // Efectivo y SINPE: el pedido se registra de una. No hay pasarela de por
+      // medio: el efectivo se cobra al entregar y el SINPE lo manda el cliente
+      // después, con el pedido ya registrado (ver /pedido/[id]).
+      if (paymentMethod === "CASH" || paymentMethod === "SINPE") {
         const cashRes = await fetch("/api/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            paymentMethod: "CASH",
+            paymentMethod,
             customerName: name.trim(),
             customerPhone: phone.trim(),
             deliveryMethod,
@@ -417,8 +421,8 @@ export default function CheckoutPage() {
       {/* Payment method */}
       <section className="space-y-3">
         <h2 className="font-semibold">¿Cómo pagás?</h2>
-        {CASH_ENABLED && <VoucherNotice paymentMethod={paymentMethod} verifiedPhone={verifiedPhone} hasPromo={!!promo} />}
-        {!CASH_ENABLED ? (
+        {CASH_ENABLED && <VoucherNotice paymentMethod={paymentMethod === "CASH" ? "CASH" : "CARD"} verifiedPhone={verifiedPhone} hasPromo={!!promo} />}
+        {!CASH_ENABLED && !sinpe ? (
           <div className="rounded-xl border bg-muted/40 p-4">
             <p className="flex items-center gap-2 text-sm font-medium">
               <CreditCard className="h-4 w-4 text-primary" />
@@ -430,7 +434,7 @@ export default function CheckoutPage() {
             </p>
           </div>
         ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className={`grid gap-3 ${CASH_ENABLED && sinpe ? "grid-cols-3" : "grid-cols-2"}`}>
           <button
             type="button"
             onClick={() => setPaymentMethod("CARD")}
@@ -445,6 +449,7 @@ export default function CheckoutPage() {
               Tarjeta
             </span>
           </button>
+          {CASH_ENABLED && (
           <button
             type="button"
             onClick={() => setPaymentMethod("CASH")}
@@ -459,7 +464,30 @@ export default function CheckoutPage() {
               Efectivo
             </span>
           </button>
+          )}
+          {sinpe && (
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("SINPE")}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-colors ${
+                paymentMethod === "SINPE"
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-primary/40"
+              }`}
+            >
+              <Smartphone className={`h-6 w-6 ${paymentMethod === "SINPE" ? "text-primary" : "text-muted-foreground"}`} />
+              <span className={`text-sm font-medium ${paymentMethod === "SINPE" ? "text-primary" : ""}`}>
+                SINPE Móvil
+              </span>
+            </button>
+          )}
         </div>
+        )}
+        {paymentMethod === "SINPE" && sinpe && (
+          <p className="text-xs text-muted-foreground">
+            Al confirmar te mostramos el monto exacto para el SINPE a{" "}
+            {sinpe.holder}. Lo aceptamos apenas veamos el pago en el banco.
+          </p>
         )}
         {CASH_ENABLED && paymentMethod === "CASH" && (
           <p className="text-xs text-muted-foreground">
@@ -660,13 +688,15 @@ export default function CheckoutPage() {
         disabled={isSubmitting || blockedReason !== null}
       >
         {isSubmitting
-          ? paymentMethod === "CASH"
-            ? "Enviando pedido..."
-            : "Redirigiendo al pago..."
+          ? paymentMethod === "CARD"
+            ? "Redirigiendo al pago..."
+            : "Enviando pedido..."
           : (blockedReason ??
             (paymentMethod === "CASH"
               ? `Pedir — pago ₡${cartTotal.toLocaleString("es-CR")} al recibir`
-              : `Pagar ₡${cartTotal.toLocaleString("es-CR")}`))}
+              : paymentMethod === "SINPE"
+                ? `Pedir — pago ₡${cartTotal.toLocaleString("es-CR")} por SINPE`
+                : `Pagar ₡${cartTotal.toLocaleString("es-CR")}`))}
       </Button>
     </form>
   );

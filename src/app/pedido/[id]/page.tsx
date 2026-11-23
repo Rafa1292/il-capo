@@ -10,6 +10,9 @@ import {
   UtensilsCrossed,
   PackageCheck,
   PartyPopper,
+  Smartphone,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -96,7 +99,61 @@ function AcceptedDisplay({ order }: { order: OrderStatus }) {
   );
 }
 
+/** "88881234" → "8888-1234", como se escribe un número en CR. */
+function formatPhone(phone: string): string {
+  return phone.length === 8 ? `${phone.slice(0, 4)}-${phone.slice(4)}` : phone;
+}
+
+/**
+ * El pedido entró pagando por SINPE directo: el cliente lo manda ahora y el
+ * local lo acepta apenas lo ve en el banco. Se pide DESPUÉS de crear el pedido
+ * a propósito: si la plata se manda antes y el pedido rebota (cerrado, fuera
+ * de zona), queda plata sin pedido.
+ */
+function SinpePending({ sinpe }: { sinpe: NonNullable<OrderStatus["sinpePayment"]> }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(sinpe.phone);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Sin portapapeles (navegador viejo o sin permiso): el número sigue a la vista.
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-4 text-center">
+      <Smartphone className="h-20 w-20 text-primary" />
+      <h2 className="text-xl font-bold">Hacé el SINPE para confirmar</h2>
+      <div className="w-full max-w-sm rounded-xl border-2 border-primary bg-primary/5 p-4 space-y-2">
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">Monto</p>
+        <p className="text-3xl font-bold text-primary">₡{sinpe.amount.toLocaleString("es-CR")}</p>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground pt-2">Al número</p>
+        <button
+          type="button"
+          onClick={() => void copy()}
+          className="inline-flex items-center gap-2 text-2xl font-bold tracking-wider"
+        >
+          {formatPhone(sinpe.phone)}
+          {copied ? <Check className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5 text-muted-foreground" />}
+        </button>
+        <p className="text-sm">A nombre de <span className="font-medium">{sinpe.holder}</span></p>
+      </div>
+      <p className="text-muted-foreground text-sm max-w-xs">
+        Apenas veamos el pago en el banco aceptamos tu pedido y empezamos a
+        prepararlo. No hace falta que nos mandés el comprobante.
+      </p>
+      <p className="text-xs text-muted-foreground animate-pulse">Actualizando automáticamente...</p>
+    </div>
+  );
+}
+
 function StatusDisplay({ order }: { order: OrderStatus }) {
+  if (order.status === "PENDING" && order.sinpePayment) {
+    return <SinpePending sinpe={order.sinpePayment} />;
+  }
+
   if (order.status === "PENDING") {
     return (
       <div className="flex flex-col items-center gap-4 text-center">
